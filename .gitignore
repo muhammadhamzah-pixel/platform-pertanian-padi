@@ -1,0 +1,30 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Log Files
+*.log
+error_log
+test_log.txt
+
+# Editor & IDE settings
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Python cache & testing artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Sensitive Keys & Credentials
+includes/gemini_key_local.php
+
+# Sensitive or Large Uploads (Opsional: simpan struktur folder)
+# uploads/*
+# !uploads/defaults.png
+# !uploads/.gitkeep
+
