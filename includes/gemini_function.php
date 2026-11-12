@@ -92,66 +92,74 @@ function tanyaGemini($pertanyaan, $gambar_path = null, $db_context = []) {
 
     $ai_data = json_decode($clean_json, true);
 
-    if ((json_last_error() !== JSON_ERROR_NONE || !isset($ai_data['action'])) && preg_match('/\{[\s\S]*\}/', $text_output, $json_matches)) {
+    if ((json_last_error() !== JSON_ERROR_NONE || !is_array($ai_data)) && preg_match('/\{[\s\S]*\}/', $text_output, $json_matches)) {
         $candidate_data = json_decode($json_matches[0], true);
-        if (json_last_error() === JSON_ERROR_NONE && isset($candidate_data['action'])) {
+        if (json_last_error() === JSON_ERROR_NONE && is_array($candidate_data)) {
             $ai_data = $candidate_data;
         }
     }
 
+    $action_normalized = '';
+    if (is_array($ai_data) && !empty($ai_data['action'])) {
+        $action_normalized = strtolower(str_replace(['_', '-', ' '], '', $ai_data['action']));
+    }
+
     // 6. Tangani Aksi Query DB atau Jawaban Langsung
-    if (is_array($ai_data) && isset($ai_data['action'])) {
-        // KONDISI A: AI minta data DB
-        if ($ai_data['action'] === 'query_db' && !empty($ai_data['sql'])) {
-            $raw_sql = $ai_data['sql'];
+    if ($action_normalized === 'querydb' && !empty($ai_data['sql'])) {
+        $raw_sql = $ai_data['sql'];
 
-            // Satpam SQL
-            $safe_sql = sanitizeAiQuery($raw_sql);
-            if ($safe_sql === false) {
-                return "⚠️ Maaf, sistem mendeteksi permintaan data yang tidak aman. Akses query dibatasi.";
-            }
-
-            $result = @mysqli_query($conn, $safe_sql);
-            if (!$result) {
-                return "⚠️ Maaf, saya gagal mengambil data dari database. (Error: " . mysqli_error($conn) . ")";
-            }
-
-            $rows = [];
-            while ($row = mysqli_fetch_assoc($result)) {
-                $rows[] = $row;
-            }
-
-            // KONDISI B: Kirim balik hasil query ke AI untuk dirangkum
-            $data_json = !empty($rows) ? json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : "[] (Hasil query mengembalikan 0 baris data / tidak ada catatan)";
-
-            $final_prompt = "Berikut adalah hasil query database untuk menjawab pertanyaan pengguna:\n" .
-                            "Pengguna: $user_nama (Role: $user_role)\n" .
-                            "Pertanyaan: $pertanyaan\n" .
-                            "Data Hasil Database: $data_json\n\n" .
-                            "Tugasmu: Rangkum data database di atas menjadi jawaban yang ramah, sopan, natural, dan akurat untuk $target_audience (dalam bahasa Indonesia).\n" .
-                            "ATURAN SANGAT PENTING:\n" .
-                            "1. Sebutkan angka / jumlah secara PASTI dan 100% AKURAT persis sesuai data di atas. Jika data kosong (0 baris), sampaikan dengan jelas bahwa saat ini belum ada data tercatat (jumlahnya 0).\n" .
-                            "2. JANGAN menambah, mengurangi, atau berhalusinasi dengan angka lain di luar data di atas.\n" .
-                            "3. Jika data memiliki rincian nama atau status, sebutkan secara jelas dan informatif.\n" .
-                            "4. Jangan sebutkan istilah teknis query SQL, nama tabel database, atau format JSON.\n" .
-                            "5. WAJIB TEKS BIASA TANPA SIMBOL MARKDOWN (tanpa *, #, _, atau `).\n";
-
-            $final_response = callUnifiedAI($final_prompt, null, $settings);
-            if (isset($final_response['error'])) {
-                return $final_response['error'];
-            }
-
-            $final_text = $final_response['text'] ?? 'Data ditemukan, namun gagal merangkum.';
-            return cleanOutputText($final_text);
+        // Satpam SQL
+        $safe_sql = sanitizeAiQuery($raw_sql);
+        if ($safe_sql === false) {
+            return "⚠️ Maaf, sistem mendeteksi permintaan data yang tidak aman. Akses query dibatasi.";
         }
 
-        // KONDISI C: AI jawab langsung
-        if ($ai_data['action'] === 'jawab_langsung') {
-            return cleanOutputText($ai_data['text'] ?? '');
+        $result = @mysqli_query($conn, $safe_sql);
+        if (!$result) {
+            return "⚠️ Maaf, saya gagal mengambil data dari database. (Error: " . mysqli_error($conn) . ")";
+        }
+
+        $rows = [];
+        while ($row = mysqli_fetch_assoc($result)) {
+            $rows[] = $row;
+        }
+
+        // KONDISI B: Kirim balik hasil query ke AI untuk dirangkum
+        $data_json = !empty($rows) ? json_encode($rows, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) : "[] (Hasil query mengembalikan 0 baris data / tidak ada catatan)";
+
+        $final_prompt = "Berikut adalah hasil query database untuk menjawab pertanyaan pengguna:\n" .
+                        "Pengguna: $user_nama (Role: $user_role)\n" .
+                        "Pertanyaan: $pertanyaan\n" .
+                        "Data Hasil Database: $data_json\n\n" .
+                        "Tugasmu: Rangkum data database di atas menjadi jawaban yang ramah, sopan, natural, dan akurat untuk $target_audience (dalam bahasa Indonesia).\n" .
+                        "ATURAN SANGAT PENTING:\n" .
+                        "1. Sebutkan angka / jumlah secara PASTI dan 100% AKURAT persis sesuai data di atas. Jika data kosong (0 baris), sampaikan dengan jelas bahwa saat ini belum ada data tercatat (jumlahnya 0).\n" .
+                        "2. JANGAN menambah, mengurangi, atau berhalusinasi dengan angka lain di luar data di atas.\n" .
+                        "3. Jika data memiliki rincian nama atau status, sebutkan secara jelas dan informatif.\n" .
+                        "4. Jangan sebutkan istilah teknis query SQL, nama tabel database, atau format JSON.\n" .
+                        "5. WAJIB TEKS BIASA TANPA SIMBOL MARKDOWN (tanpa *, #, _, atau `).\n";
+
+        $final_response = callUnifiedAI($final_prompt, null, $settings);
+        if (isset($final_response['error'])) {
+            return $final_response['error'];
+        }
+
+        $final_text = $final_response['text'] ?? 'Data ditemukan, namun gagal merangkum.';
+        return extractCleanAnswer($final_text);
+    }
+
+    // KONDISI C: AI jawab langsung (baik action jawab_langsung, jawablangsung, atau ada field text/jawaban)
+    if (is_array($ai_data)) {
+        if (!empty($ai_data['text'])) {
+            return cleanOutputText($ai_data['text']);
+        }
+        if (!empty($ai_data['jawaban'])) {
+            return cleanOutputText($ai_data['jawaban']);
         }
     }
 
-    return cleanOutputText($text_output);
+    // Jika parsing JSON di atas lolos / format tidak standar, gunakan fungsi ekstraksi bersih serba-bisa:
+    return extractCleanAnswer($text_output);
 }
 
 /**
@@ -163,7 +171,7 @@ function callUnifiedAI($prompt, $gambar_path = null, $settings = null) {
         $settings = get_ai_settings();
     }
 
-    $active_model = $settings['active_model'] ?? 'gemini-1.5-flash';
+    $active_model = $settings['active_model'] ?? 'gemini-3.5-flash-lite';
     $models_list  = get_available_ai_models();
     $model_info   = $models_list[$active_model] ?? [
         'provider_key' => 'gemini',
@@ -238,7 +246,7 @@ function callUnifiedAI($prompt, $gambar_path = null, $settings = null) {
     if (!empty($settings['auto_failover'])) {
         $gemini_key = !empty($settings['gemini_key_primary']) ? $settings['gemini_key_primary'] : (defined('GEMINI_API_KEY_ADMIN') ? GEMINI_API_KEY_ADMIN : '');
         if (!empty($gemini_key)) {
-            return callSingleGemini($gemini_key, 'gemini-1.5-flash', $prompt, $gambar_path, $settings);
+            return callSingleGemini($gemini_key, 'gemini-3.5-flash-lite', $prompt, $gambar_path, $settings);
         }
     }
 
@@ -288,9 +296,10 @@ function callSingleGemini($api_key, $model, $prompt, $gambar_path = null, $setti
 
     $models_fallback = array_values(array_unique([
         $model,
-        'gemini-1.5-flash',
-        'gemini-1.5-flash-8b',
-        'gemini-1.5-pro'
+        'gemini-3.5-flash-lite',
+        'gemini-3.5-flash',
+        'gemini-2.5-flash',
+        'gemini-2.5-pro'
     ]));
 
     $last_http_code = 0;
@@ -392,11 +401,74 @@ function callOpenAICompatibleAPI($endpoint, $api_key, $model, $prompt, $settings
 }
 
 /**
- * Membersihkan output teks dari karakter markdown agar bersih di layar
+ * Mengekstrak teks murni jawaban AI dari format JSON mentah (apapun bentuknya)
+ */
+function extractCleanAnswer($text_output) {
+    if (empty($text_output) || !is_string($text_output)) return '';
+
+    // 1. Coba decode JSON langsung
+    $clean_json = preg_replace('/```json/i', '', $text_output);
+    $clean_json = preg_replace('/```/i', '', $clean_json);
+    $clean_json = trim($clean_json);
+
+    $ai_data = json_decode($clean_json, true);
+
+    // Fallback regex jika ada teks pengantar di luar blok JSON
+    if ((json_last_error() !== JSON_ERROR_NONE || !is_array($ai_data)) && preg_match('/\{[\s\S]*\}/', $text_output, $json_matches)) {
+        $candidate = json_decode($json_matches[0], true);
+        if (json_last_error() === JSON_ERROR_NONE && is_array($candidate)) {
+            $ai_data = $candidate;
+        }
+    }
+
+    if (is_array($ai_data)) {
+        if (!empty($ai_data['text'])) {
+            return cleanOutputText($ai_data['text']);
+        }
+        if (!empty($ai_data['jawaban'])) {
+            return cleanOutputText($ai_data['jawaban']);
+        }
+    }
+
+    // 2. Fallback regex jika JSON decode gagal karena kutip/karakter khusus
+    if (preg_match('/"(?:text|jawaban)"\s*:\s*"((?:[^"\\\\]|\\\\.)*)"/s', $text_output, $m)) {
+        $extracted = stripcslashes($m[1]);
+        return cleanOutputText($extracted);
+    }
+
+    // 3. Fallback pembersihan tag JSON mentah di awal & akhir string
+    $cleaned = preg_replace('/^\s*\{.*?"(?:text|jawaban)"\s*:\s*"?/is', '', $text_output);
+    $cleaned = preg_replace('/"?\s*\}\s*$/s', '', $cleaned);
+    return cleanOutputText($cleaned);
+}
+
+/**
+ * Membersihkan output teks dari karakter markdown dan sisa-sisa simbol teknis JSON
  */
 function cleanOutputText($text) {
+    if (!is_string($text)) return '';
+
+    // Hapus sisa-sisa pembungkus JSON jika masih ada
+    $text = preg_replace('/^\s*\{\s*"action"\s*:\s*"[^"]+"\s*,\s*"(?:text|jawaban)"\s*:\s*"?/is', '', $text);
+    $text = preg_replace('/"?\s*\}\s*$/s', '', $text);
+
+    // Hapus kurung kurawal pembungkus JSON lainnya jika ada di awal & akhir
+    $text = preg_replace('/^\s*\{.*?"(?:text|jawaban)"\s*:\s*"?/is', '', $text);
+    $text = preg_replace('/"?\s*\}\s*$/s', '', $text);
+
+    // Jika ada literal \n atau \" yang belum ter-decode
+    if (strpos($text, '\n') !== false && strpos($text, "\n") === false) {
+        $text = str_replace('\n', "\n", $text);
+    }
+    if (strpos($text, '\"') !== false) {
+        $text = str_replace('\"', '"', $text);
+    }
+
+    // Bersihkan markdown (*, #, _, `)
     $text = str_replace(['*', '#', '_', '`'], '', $text);
+    // Rapikan bullet point dash menjadi bulatan yang rapi
     $text = preg_replace('/^[ \t]*-[ \t]+/m', '• ', $text);
+
     return trim($text);
 }
 ?>
