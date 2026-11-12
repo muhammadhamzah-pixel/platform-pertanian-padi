@@ -150,6 +150,12 @@ require_once __DIR__ . '/header.php';
                     </a>
                 </li>
                 <li>
+                    <a href="<?= $base_url ?>konfigurasi_ai" class="<?= $current_clean == 'konfigurasi_ai' ? 'active' : '' ?>">
+                        <i class="fas fa-microchip nav-icon" style="color: #10b981;"></i>
+                        <span>Konfigurasi AI</span>
+                    </a>
+                </li>
+                <li>
                     <a href="<?= $base_url ?>security_analytics" class="<?= $current_clean == 'security_analytics' ? 'active' : '' ?>">
                         <i class="fas fa-shield-virus nav-icon"></i>
                         <span><?= t('menu_security') ?></span>

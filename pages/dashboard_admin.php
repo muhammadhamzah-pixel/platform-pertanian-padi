@@ -33,13 +33,16 @@ include '../includes/navbar.php';
             <p><?= t('welcome_back') ?>, <strong><?= htmlspecialchars($_SESSION['nama']) ?></strong>! Pantau performa platform, audit sistem, dan manajemen pengguna desa secara real-time.</p>
         </div>
         <div class="dash-hero-actions">
-            <a href="kelola_user.php" class="btn-primary-green">
+            <a href="<?= $base_url ?>konfigurasi_ai" class="btn-primary-green">
+                <i class="fas fa-microchip"></i> Konfigurasi AI
+            </a>
+            <a href="<?= $base_url ?>kelola_user" class="btn-outline-white">
                 <i class="fas fa-user-plus"></i> Kelola User
             </a>
-            <a href="security_analytics.php" class="btn-outline-white">
+            <a href="<?= $base_url ?>security_analytics" class="btn-outline-white">
                 <i class="fas fa-shield-alt"></i> Security Analytics
             </a>
-            <a href="backup_data.php" class="btn-outline-white">
+            <a href="<?= $base_url ?>backup_data" class="btn-outline-white">
                 <i class="fas fa-database"></i> Backup Data
             </a>
         </div>

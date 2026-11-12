@@ -134,6 +134,38 @@ INSERT INTO `desa_settings` VALUES (1,'Desa Sukamakmur','Cilawu','haurgelis','08
 UNLOCK TABLES;
 
 --
+-- Table structure for table `ai_settings`
+--
+
+DROP TABLE IF EXISTS `ai_settings`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ai_settings` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `active_model` varchar(100) NOT NULL DEFAULT 'gemini-1.5-flash',
+  `gemini_key_primary` varchar(255) DEFAULT '',
+  `gemini_key_backup_1` varchar(255) DEFAULT '',
+  `gemini_key_backup_2` varchar(255) DEFAULT '',
+  `groq_api_key` varchar(255) DEFAULT '',
+  `deepseek_api_key` varchar(255) DEFAULT '',
+  `openai_api_key` varchar(255) DEFAULT '',
+  `auto_failover` tinyint(1) NOT NULL DEFAULT '1',
+  `ai_tone` varchar(50) NOT NULL DEFAULT 'seimbang',
+  `temperature` decimal(2,1) NOT NULL DEFAULT '0.3',
+  `max_tokens` int NOT NULL DEFAULT '2000',
+  `last_tested_at` datetime DEFAULT NULL,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+LOCK TABLES `ai_settings` WRITE;
+/*!40000 ALTER TABLE `ai_settings` DISABLE KEYS */;
+INSERT INTO `ai_settings` (`id`, `active_model`, `gemini_key_primary`, `gemini_key_backup_1`, `gemini_key_backup_2`, `auto_failover`, `ai_tone`, `temperature`) VALUES (1, 'gemini-1.5-flash', 'YOUR_GEMINI_KEY_PRIMARY', 'YOUR_GEMINI_KEY_BACKUP_1', 'YOUR_GEMINI_KEY_BACKUP_2', 1, 'seimbang', 0.3);
+/*!40000 ALTER TABLE `ai_settings` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `faq`
 --
 
