@@ -23,41 +23,41 @@ if (!defined('GEMINI_API_KEY_PETANI')) {
  */
 function get_available_ai_models() {
     return [
-        'gemini-1.5-flash' => [
-            'id' => 'gemini-1.5-flash',
-            'name' => 'Gemini 1.5 Flash',
+        'gemini-3.5-flash-lite' => [
+            'id' => 'gemini-3.5-flash-lite',
+            'name' => 'Gemini 3.5 Flash Lite',
             'provider' => 'Google Gemini',
             'provider_key' => 'gemini',
             'badge' => 'Rekomendasi Utama',
             'badge_color' => 'success',
             'desc' => 'Super cepat, hemat kuota token, sangat responsif untuk konsultasi harian petani.'
         ],
-        'gemini-1.5-pro' => [
-            'id' => 'gemini-1.5-pro',
-            'name' => 'Gemini 1.5 Pro',
+        'gemini-3.5-flash' => [
+            'id' => 'gemini-3.5-flash',
+            'name' => 'Gemini 3.5 Flash',
             'provider' => 'Google Gemini',
             'provider_key' => 'gemini',
             'badge' => 'Super Cerdas',
             'badge_color' => 'primary',
-            'desc' => 'Penalaran tingkat tinggi & multimodal, paling akurat mendiagnosis foto hama & penyakit padi.'
+            'desc' => 'Penalaran tinggi dan analisis visual foto hama dan penyakit padi akurat.'
         ],
-        'gemini-2.0-flash-exp' => [
-            'id' => 'gemini-2.0-flash-exp',
-            'name' => 'Gemini 2.0 Flash (Next-Gen)',
+        'gemini-2.5-flash' => [
+            'id' => 'gemini-2.5-flash',
+            'name' => 'Gemini 2.5 Flash',
             'provider' => 'Google Gemini',
             'provider_key' => 'gemini',
-            'badge' => 'Experimental',
-            'badge_color' => 'warning',
-            'desc' => 'Arsitektur generasi terbaru dari Google dengan kapabilitas penalaran real-time mutakhir.'
-        ],
-        'gemini-1.5-flash-8b' => [
-            'id' => 'gemini-1.5-flash-8b',
-            'name' => 'Gemini 1.5 Flash-8B',
-            'provider' => 'Google Gemini',
-            'provider_key' => 'gemini',
-            'badge' => 'Ultra Hemat',
+            'badge' => 'Versi Stabil',
             'badge_color' => 'info',
-            'desc' => 'Versi hemat sumber daya, dirancang untuk throughput tinggi dengan latensi super rendah.'
+            'desc' => 'Model multimodal andal dari Google untuk operasional sehari-hari.'
+        ],
+        'gemini-2.5-pro' => [
+            'id' => 'gemini-2.5-pro',
+            'name' => 'Gemini 2.5 Pro',
+            'provider' => 'Google Gemini',
+            'provider_key' => 'gemini',
+            'badge' => 'Penalaran Kompleks',
+            'badge_color' => 'warning',
+            'desc' => 'Daya nalar logika tingkat lanjut untuk kalkulasi pertanian dan rekapitulasi desa.'
         ],
         'llama-3.3-70b-versatile' => [
             'id' => 'llama-3.3-70b-versatile',
@@ -131,7 +131,7 @@ function get_ai_settings($conn = null) {
 
     $default = [
         'id' => 1,
-        'active_model' => 'gemini-1.5-flash',
+        'active_model' => 'gemini-3.5-flash-lite',
         'gemini_key_primary' => defined('GEMINI_API_KEY_ADMIN') ? GEMINI_API_KEY_ADMIN : '',
         'gemini_key_backup_1' => defined('GEMINI_API_KEY_DESA') ? GEMINI_API_KEY_DESA : '',
         'gemini_key_backup_2' => defined('GEMINI_API_KEY_PETANI') ? GEMINI_API_KEY_PETANI : '',
@@ -174,8 +174,14 @@ function test_ai_connection($provider, $api_key, $model = null) {
     $start_time = microtime(true);
 
     if ($provider === 'gemini') {
-        $test_model = $model ?: 'gemini-1.5-flash';
-        $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . $test_model . ':generateContent?key=' . urlencode($api_key);
+        // Daftar kandidat model yang valid (prioritaskan yang aktif di server Google saat ini)
+        $models_to_test = array_values(array_filter(array_unique([
+            $model,
+            'gemini-3.5-flash-lite',
+            'gemini-3.5-flash',
+            'gemini-2.5-flash'
+        ])));
+
         $payload = [
             'contents' => [
                 ['parts' => [['text' => 'ping']]]
@@ -186,41 +192,62 @@ function test_ai_connection($provider, $api_key, $model = null) {
             ]
         ];
 
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 12);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        $last_code = 0;
+        $last_err = '';
 
-        $response = curl_exec($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curl_err = curl_error($ch);
-        curl_close($ch);
+        foreach ($models_to_test as $test_model) {
+            $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . $test_model . ':generateContent?key=' . urlencode($api_key);
+
+            $ch = curl_init($url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+            curl_setopt($ch, CURLOPT_TIMEOUT, 12);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+
+            $response = curl_exec($ch);
+            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curl_err = curl_error($ch);
+            curl_close($ch);
+
+            $last_code = $http_code;
+            $last_err = $curl_err;
+            $latency = round((microtime(true) - $start_time) * 1000);
+
+            if ($http_code === 200) {
+                return [
+                    'success' => true,
+                    'status' => 'active',
+                    'code' => 200,
+                    'latency' => $latency,
+                    'message' => "🟢 Koneksi Sukses! Model Gemini ($test_model) merespon dalam {$latency}ms."
+                ];
+            }
+
+            // Jika 404, coba kandidat model berikutnya
+            if ($http_code === 404) {
+                continue;
+            }
+
+            // Jika 429 atau 400/403, berarti API Key-nya yang limit atau invalid, stop loop
+            break;
+        }
 
         $latency = round((microtime(true) - $start_time) * 1000);
 
-        if ($curl_err) {
+        if ($last_err) {
             return [
                 'success' => false,
                 'status' => 'network_error',
                 'code' => 0,
                 'latency' => $latency,
-                'message' => 'Gagal terhubung ke Google AI: ' . $curl_err
+                'message' => 'Gagal terhubung ke Google AI: ' . $last_err
             ];
         }
 
-        if ($http_code === 200) {
-            return [
-                'success' => true,
-                'status' => 'active',
-                'code' => 200,
-                'latency' => $latency,
-                'message' => "🟢 Koneksi Sukses! Model $test_model merespon dalam {$latency}ms."
-            ];
-        } elseif ($http_code === 429) {
+        if ($last_code === 429) {
             return [
                 'success' => false,
                 'status' => 'rate_limited',
@@ -228,21 +255,21 @@ function test_ai_connection($provider, $api_key, $model = null) {
                 'latency' => $latency,
                 'message' => "🟡 Kuota Habis / Rate Limit (Error 429). Sistem akan otomatis memakai key cadangan."
             ];
-        } elseif ($http_code === 400 || $http_code === 403) {
+        } elseif ($last_code === 400 || $last_code === 403) {
             return [
                 'success' => false,
                 'status' => 'invalid_key',
-                'code' => $http_code,
+                'code' => $last_code,
                 'latency' => $latency,
-                'message' => "🔴 API Key Ditolak / Tidak Valid (Error $http_code). Periksa kembali key Anda."
+                'message' => "🔴 API Key Ditolak / Tidak Valid (Error $last_code). Periksa kembali key Anda."
             ];
         } else {
             return [
                 'success' => false,
                 'status' => 'error',
-                'code' => $http_code,
+                'code' => $last_code,
                 'latency' => $latency,
-                'message' => "⚠️ Respon Google: HTTP Code $http_code."
+                'message' => "⚠️ Respon Google: HTTP Code $last_code."
             ];
         }
     } else {
@@ -326,7 +353,7 @@ function test_ai_connection($provider, $api_key, $model = null) {
 // ============================================
 $current_ai_settings = get_ai_settings();
 if (!defined('GEMINI_MODEL')) {
-    define('GEMINI_MODEL', $current_ai_settings['active_model'] ?? 'gemini-1.5-flash');
+    define('GEMINI_MODEL', $current_ai_settings['active_model'] ?? 'gemini-3.5-flash-lite');
 }
 if (!defined('GEMINI_ENDPOINT')) {
     define('GEMINI_ENDPOINT', 'https://generativelanguage.googleapis.com/v1beta/models/' . GEMINI_MODEL . ':generateContent');
@@ -337,11 +364,9 @@ if (!defined('GEMINI_ENDPOINT')) {
  */
 function getGeminiApiKey($role = 'petani') {
     $settings = get_ai_settings();
-    // Gunakan Key Utama jika tersedia
     if (!empty($settings['gemini_key_primary'])) {
         return $settings['gemini_key_primary'];
     }
-    // Fallback role
     if ($role === 'admin' && defined('GEMINI_API_KEY_ADMIN')) return GEMINI_API_KEY_ADMIN;
     if ($role === 'perangkat_desa' && defined('GEMINI_API_KEY_DESA')) return GEMINI_API_KEY_DESA;
     if (defined('GEMINI_API_KEY_PETANI')) return GEMINI_API_KEY_PETANI;

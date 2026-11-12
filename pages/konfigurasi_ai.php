@@ -162,10 +162,10 @@ include '../includes/navbar.php';
                     <label class="form-label-modern small text-muted mb-1">Pilih salah satu dari 10 model yang tersedia:</label>
                     <select name="active_model" class="form-select form-control-modern fs-6" id="modelSelector" onchange="updateModelBadge(this)">
                         <optgroup label="── Google Gemini ──">
-                            <option value="gemini-1.5-flash" <?= $settings['active_model'] == 'gemini-1.5-flash' ? 'selected' : '' ?>>Gemini 1.5 Flash (Rekomendasi - Cepat & Hemat Kuota)</option>
-                            <option value="gemini-1.5-pro" <?= $settings['active_model'] == 'gemini-1.5-pro' ? 'selected' : '' ?>>Gemini 1.5 Pro (Super Cerdas - Analisis Detail)</option>
-                            <option value="gemini-2.0-flash-exp" <?= $settings['active_model'] == 'gemini-2.0-flash-exp' ? 'selected' : '' ?>>Gemini 2.0 Flash (Next-Gen 2026)</option>
-                            <option value="gemini-1.5-flash-8b" <?= $settings['active_model'] == 'gemini-1.5-flash-8b' ? 'selected' : '' ?>>Gemini 1.5 Flash-8B (Ultra Ringan)</option>
+                            <option value="gemini-3.5-flash-lite" <?= $settings['active_model'] == 'gemini-3.5-flash-lite' ? 'selected' : '' ?>>Gemini 3.5 Flash Lite (Rekomendasi - Cepat & Hemat Kuota)</option>
+                            <option value="gemini-3.5-flash" <?= $settings['active_model'] == 'gemini-3.5-flash' ? 'selected' : '' ?>>Gemini 3.5 Flash (Super Cerdas - Analisis Detail)</option>
+                            <option value="gemini-2.5-flash" <?= $settings['active_model'] == 'gemini-2.5-flash' ? 'selected' : '' ?>>Gemini 2.5 Flash (Versi Stabil)</option>
+                            <option value="gemini-2.5-pro" <?= $settings['active_model'] == 'gemini-2.5-pro' ? 'selected' : '' ?>>Gemini 2.5 Pro (Penalaran Kompleks)</option>
                         </optgroup>
                         <optgroup label="── Groq Cloud (Meta Llama & Mixtral) ──">
                             <option value="llama-3.3-70b-versatile" <?= $settings['active_model'] == 'llama-3.3-70b-versatile' ? 'selected' : '' ?>>Meta Llama 3.3 70B (Open-Source Flagship)</option>
@@ -427,10 +427,12 @@ async function testSingleKey(provider, inputId, resultBoxId) {
     }
 
     try {
+        const activeModel = document.getElementById('modelSelector') ? document.getElementById('modelSelector').value : 'gemini-3.5-flash-lite';
         const formData = new FormData();
         formData.append('csrf_token', csrfToken);
         formData.append('provider', provider);
         formData.append('api_key', keyVal);
+        formData.append('model', activeModel);
 
         const response = await fetch('<?= $base_url ?>konfigurasi_ai?ajax=test_key', {
             method: 'POST',
