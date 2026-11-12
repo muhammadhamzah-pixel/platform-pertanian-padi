@@ -1,0 +1,61 @@
+# ===================================================
+# FIREWALL & KEAMANAN WEB PLATFORM PADI DESA
+# ===================================================
+
+# 1. Matikan Directory Browsing (Mencegah pengunjung melihat struktur isi folder)
+Options -Indexes -MultiViews
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /PLATFORM%20PERTANIAN%20PADI/
+
+    # 2. Blokir Akses Langsung ke Folder Sensitif & Berkas Internal
+    RewriteRule ^(database|includes|tests|\.git)(/.*)?$ - [F,L]
+
+    # 3. Blokir Akses ke File Ekstensi Sensitif
+    <FilesMatch "(^\.|\.(sql|log|md|env|py|gitignore|gitattributes|bak|backup|jsonl?)$)">
+        Require all denied
+    </FilesMatch>
+
+    # 4. Izinkan Aset Statis Publik (CSS, JS, Gambar, Font) lewat langsung tanpa redirect
+    RewriteRule \.(css|js|png|jpe?g|gif|svg|ico|webp|woff2?|ttf|eot)$ - [L]
+
+    # 5. Redirect Landing Page ke Root Utama (Jika user mengetik /public/index.php, /public/ atau /index.php)
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/PLATFORM\%20PERTANIAN\%20PADI/public/(index(\.php)?)?(\s|\?) [NC]
+    RewriteRule ^ /PLATFORM\%20PERTANIAN\%20PADI/ [R=301,L,NE]
+
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/PLATFORM\%20PERTANIAN\%20PADI/index(\.php)?(\s|\?) [NC]
+    RewriteRule ^ /PLATFORM\%20PERTANIAN\%20PADI/ [R=301,L,NE]
+
+    # 6. Redirect URL Lama (Hapus /pages/ dan .php dari URL browser)
+    # Contoh: /pages/dashboard_admin.php -> /dashboard_admin
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/PLATFORM\%20PERTANIAN\%20PADI/pages/([^\s\?]+)\.php [NC]
+    RewriteRule ^ %1 [R=301,L,NE]
+
+    # Contoh: /pages/dashboard_admin -> /dashboard_admin
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/PLATFORM\%20PERTANIAN\%20PADI/pages/([^\s\?]+) [NC]
+    RewriteRule ^ %1 [R=301,L,NE]
+
+    # Contoh: /dashboard_admin.php -> /dashboard_admin
+    RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s/PLATFORM\%20PERTANIAN\%20PADI/([^\s\?]+)\.php [NC]
+    RewriteRule ^ %1 [R=301,L,NE]
+
+    # 7. Routing Internal: Bila user buka /nama_halaman, arahkan ke pages/nama_halaman.php
+    RewriteCond %{DOCUMENT_ROOT}/PLATFORM\ PERTANIAN\ PADI/pages/$1.php -f
+    RewriteRule ^([^/]+)/?$ pages/$1.php [L,QSA]
+
+    # 8. Routing Internal untuk file php di root jika ada
+    RewriteCond %{DOCUMENT_ROOT}/PLATFORM\ PERTANIAN\ PADI/$1.php -f
+    RewriteRule ^([^/]+)/?$ $1.php [L,QSA]
+
+</IfModule>
+
+# ===================================================
+# HTTP SECURITY HEADERS (Perlindungan Serangan XSS & Clickjacking)
+# ===================================================
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

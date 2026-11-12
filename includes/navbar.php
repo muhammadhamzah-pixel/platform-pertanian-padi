@@ -6,10 +6,19 @@ if (!isset($_SESSION['user_id'])) {
     return;
 }
 
+// Pastikan $base_url selalu tersedia
+if (!isset($base_url)) {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host_url = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $folder_project = '/PLATFORM%20PERTANIAN%20PADI/';
+    $base_url = $protocol . '://' . $host_url . $folder_project;
+}
+
 $role = $_SESSION['role'];
 $nama = $_SESSION['nama'];
 $user_id = $_SESSION['user_id'];
 $current_page = basename($_SERVER['PHP_SELF']);
+$current_clean = str_replace('.php', '', $current_page);
 
 // Ambil foto dari database atau session
 $foto = $_SESSION['foto'] ?? 'defaults.png';
@@ -48,7 +57,7 @@ require_once __DIR__ . '/header.php';
 <!-- SIDEBAR (DASH UI SLEEK DARK STYLE) -->
 <aside class="sidebar" id="sidebar">
     <!-- Brand -->
-    <a href="dashboard_<?= $role ?>.php" class="brand">
+    <a href="<?= $base_url ?>dashboard_<?= $role ?>" class="brand">
         <div class="brand-icon">
             <i class="fas fa-seedling"></i>
         </div>
@@ -61,7 +70,7 @@ require_once __DIR__ . '/header.php';
     <!-- User Profile Widget -->
     <div class="user-info">
         <div class="user-avatar-wrap">
-            <img src="../uploads/foto/<?= htmlspecialchars($foto) ?>" alt="Foto Profil" onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($nama) ?>&background=059669&color=fff'">
+            <img src="<?= $base_url ?>uploads/foto/<?= htmlspecialchars($foto) ?>" alt="Foto Profil" onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($nama) ?>&background=059669&color=fff'">
             <div class="online-dot" title="Online"></div>
         </div>
         <div class="user-details">
@@ -77,31 +86,31 @@ require_once __DIR__ . '/header.php';
         <ul>
             <?php if ($role == 'petani'): ?>
                 <li>
-                    <a href="dashboard_petani.php" class="<?= $current_page == 'dashboard_petani.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>dashboard_petani" class="<?= $current_clean == 'dashboard_petani' ? 'active' : '' ?>">
                         <i class="fas fa-chart-pie nav-icon"></i>
                         <span><?= t('menu_dashboard') ?></span>
                     </a>
                 </li>
                 <li>
-                    <a href="data_lahan.php" class="<?= $current_page == 'data_lahan.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>data_lahan" class="<?= $current_clean == 'data_lahan' ? 'active' : '' ?>">
                         <i class="fas fa-layer-group nav-icon"></i>
                         <span><?= t('menu_land_data') ?></span>
                     </a>
                 </li>
                 <li>
-                    <a href="tambah_lahan.php" class="<?= $current_page == 'tambah_lahan.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>tambah_lahan" class="<?= $current_clean == 'tambah_lahan' ? 'active' : '' ?>">
                         <i class="fas fa-plus-circle nav-icon"></i>
                         <span><?= t('menu_add_land') ?></span>
                     </a>
                 </li>
                 <li>
-                    <a href="ai_chat.php" class="<?= $current_page == 'ai_chat.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>ai_chat" class="<?= $current_clean == 'ai_chat' ? 'active' : '' ?>">
                         <i class="fas fa-robot nav-icon" style="color: #10b981;"></i>
                         <span>Sahabat Tani AI</span>
                     </a>
                 </li>
                 <li>
-                    <a href="notifikasi.php" class="<?= $current_page == 'notifikasi.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>notifikasi" class="<?= $current_clean == 'notifikasi' ? 'active' : '' ?>">
                         <i class="fas fa-bell nav-icon"></i>
                         <span><?= t('menu_notification') ?></span>
                     </a>
@@ -109,25 +118,25 @@ require_once __DIR__ . '/header.php';
 
             <?php elseif ($role == 'perangkat_desa'): ?>
                 <li>
-                    <a href="dashboard_desa.php" class="<?= $current_page == 'dashboard_desa.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>dashboard_desa" class="<?= $current_clean == 'dashboard_desa' ? 'active' : '' ?>">
                         <i class="fas fa-chart-pie nav-icon"></i>
                         <span><?= t('menu_dashboard') ?></span>
                     </a>
                 </li>
                 <li>
-                    <a href="verifikasi_akun.php" class="<?= $current_page == 'verifikasi_akun.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>verifikasi_akun" class="<?= $current_clean == 'verifikasi_akun' ? 'active' : '' ?>">
                         <i class="fas fa-user-check nav-icon"></i>
                         <span><?= t('menu_verify_account') ?></span>
                     </a>
                 </li>
                 <li>
-                    <a href="data_semua_petani.php" class="<?= $current_page == 'data_semua_petani.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>data_semua_petani" class="<?= $current_clean == 'data_semua_petani' ? 'active' : '' ?>">
                         <i class="fas fa-users nav-icon"></i>
                         <span><?= t('menu_farmer_data') ?></span>
                     </a>
                 </li>
                 <li>
-                    <a href="rekap_desa.php" class="<?= $current_page == 'rekap_desa.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>rekap_desa" class="<?= $current_clean == 'rekap_desa' ? 'active' : '' ?>">
                         <i class="fas fa-file-invoice nav-icon"></i>
                         <span><?= t('menu_village_recap') ?></span>
                     </a>
@@ -135,43 +144,43 @@ require_once __DIR__ . '/header.php';
 
             <?php elseif ($role == 'admin'): ?>
                 <li>
-                    <a href="dashboard_admin.php" class="<?= $current_page == 'dashboard_admin.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>dashboard_admin" class="<?= $current_clean == 'dashboard_admin' ? 'active' : '' ?>">
                         <i class="fas fa-chart-pie nav-icon"></i>
                         <span><?= t('menu_dashboard') ?></span>
                     </a>
                 </li>
                 <li>
-                    <a href="security_analytics.php" class="<?= $current_page == 'security_analytics.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>security_analytics" class="<?= $current_clean == 'security_analytics' ? 'active' : '' ?>">
                         <i class="fas fa-shield-virus nav-icon"></i>
                         <span><?= t('menu_security') ?></span>
                     </a>
                 </li>
                 <li>
-                    <a href="kelola_user.php" class="<?= $current_page == 'kelola_user.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>kelola_user" class="<?= $current_clean == 'kelola_user' ? 'active' : '' ?>">
                         <i class="fas fa-user-cog nav-icon"></i>
                         <span><?= t('menu_manage_user') ?></span>
                     </a>
                 </li>
                 <li>
-                    <a href="user_terblokir.php" class="<?= $current_page == 'user_terblokir.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>user_terblokir" class="<?= $current_clean == 'user_terblokir' ? 'active' : '' ?>">
                         <i class="fas fa-user-slash nav-icon"></i>
                         <span><?= t('menu_blocked_user') ?></span>
                     </a>
                 </li>
                 <li>
-                    <a href="setting_desa.php" class="<?= $current_page == 'setting_desa.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>setting_desa" class="<?= $current_clean == 'setting_desa' ? 'active' : '' ?>">
                         <i class="fas fa-map-marked-alt nav-icon"></i>
                         <span><?= t('menu_village_setting') ?></span>
                     </a>
                 </li>
                 <li>
-                    <a href="backup_data.php" class="<?= $current_page == 'backup_data.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>backup_data" class="<?= $current_clean == 'backup_data' ? 'active' : '' ?>">
                         <i class="fas fa-database nav-icon"></i>
                         <span><?= t('menu_backup_data') ?></span>
                     </a>
                 </li>
                 <li>
-                    <a href="log_aktivitas.php" class="<?= $current_page == 'log_aktivitas.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>log_aktivitas" class="<?= $current_clean == 'log_aktivitas' ? 'active' : '' ?>">
                         <i class="fas fa-history nav-icon"></i>
                         <span><?= t('menu_activity_log') ?></span>
                     </a>
@@ -184,26 +193,26 @@ require_once __DIR__ . '/header.php';
         <ul>
             <?php if ($role == 'petani'): ?>
                 <li>
-                    <a href="setting_notifikasi.php" class="<?= $current_page == 'setting_notifikasi.php' ? 'active' : '' ?>">
+                    <a href="<?= $base_url ?>setting_notifikasi" class="<?= $current_clean == 'setting_notifikasi' ? 'active' : '' ?>">
                         <i class="fas fa-sliders-h nav-icon"></i>
                         <span>Setting Notifikasi</span>
                     </a>
                 </li>
             <?php endif; ?>
             <li>
-                <a href="ganti_password.php" class="<?= $current_page == 'ganti_password.php' ? 'active' : '' ?>">
+                <a href="<?= $base_url ?>ganti_password" class="<?= $current_clean == 'ganti_password' ? 'active' : '' ?>">
                     <i class="fas fa-key nav-icon"></i>
                     <span><?= t('menu_change_password') ?></span>
                 </a>
             </li>
             <li>
-                <a href="edit_foto.php" class="<?= $current_page == 'edit_foto.php' ? 'active' : '' ?>">
+                <a href="<?= $base_url ?>edit_foto" class="<?= $current_clean == 'edit_foto' ? 'active' : '' ?>">
                     <i class="fas fa-image nav-icon"></i>
                     <span><?= t('menu_change_photo') ?></span>
                 </a>
             </li>
             <li>
-                <a href="logout.php" class="logout-btn">
+                <a href="<?= $base_url ?>logout" class="logout-btn">
                     <i class="fas fa-sign-out-alt nav-icon"></i>
                     <span><?= t('menu_logout') ?></span>
                 </a>
@@ -233,7 +242,7 @@ require_once __DIR__ . '/header.php';
 
             <?php if ($role === 'petani'): ?>
                 <!-- Ikon Lonceng Notifikasi Khusus Petani -->
-                <a href="notifikasi.php" class="topbar-notif-btn" title="Notifikasi <?= $navbar_unread_notif > 0 ? "($navbar_unread_notif pesan baru)" : '' ?>">
+                <a href="<?= $base_url ?>notifikasi" class="topbar-notif-btn" title="Notifikasi <?= $navbar_unread_notif > 0 ? "($navbar_unread_notif pesan baru)" : '' ?>">
                     <i class="far fa-bell"></i>
                     <?php if ($navbar_unread_notif > 0): ?>
                         <span class="topbar-notif-dot" title="<?= $navbar_unread_notif ?> belum dibaca"></span>
@@ -241,8 +250,8 @@ require_once __DIR__ . '/header.php';
                 </a>
             <?php endif; ?>
             
-            <a href="edit_foto.php" class="d-flex align-items-center gap-2 text-decoration-none">
-                <img src="../uploads/foto/<?= htmlspecialchars($foto) ?>" alt="Avatar" class="user-avatar-sm" onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($nama) ?>&background=059669&color=fff'">
+            <a href="<?= $base_url ?>edit_foto" class="d-flex align-items-center gap-2 text-decoration-none">
+                <img src="<?= $base_url ?>uploads/foto/<?= htmlspecialchars($foto) ?>" alt="Avatar" class="user-avatar-sm" onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($nama) ?>&background=059669&color=fff'">
             </a>
         </div>
     </header>

@@ -4,11 +4,11 @@ include '../includes/config.php';
 // Kalo udah login, redirect ke dashboard masing-masing
 if (isset($_SESSION['user_id'])) {
     if ($_SESSION['role'] == 'admin') {
-        header('Location: dashboard_admin.php');
+        header('Location: ' . $base_url . 'dashboard_admin');
     } elseif ($_SESSION['role'] == 'perangkat_desa') {
-        header('Location: dashboard_desa.php');
+        header('Location: ' . $base_url . 'dashboard_desa');
     } else {
-        header('Location: dashboard_petani.php');
+        header('Location: ' . $base_url . 'dashboard_petani');
     }
     exit();
 }
@@ -82,11 +82,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             regenerate_csrf_token();
                             
                             if ($user['role'] == 'admin') {
-                                header('Location: dashboard_admin.php');
+                                header('Location: ' . $base_url . 'dashboard_admin');
                             } elseif ($user['role'] == 'perangkat_desa') {
-                                header('Location: dashboard_desa.php');
+                                header('Location: ' . $base_url . 'dashboard_desa');
                             } else {
-                                header('Location: dashboard_petani.php');
+                                header('Location: ' . $base_url . 'dashboard_petani');
                             }
                             exit();
                         }
@@ -167,7 +167,7 @@ include '../includes/header.php';
                     <div class="mb-3">
                         <div class="d-flex align-items-center justify-content-between mb-1">
                             <label class="form-label-modern mb-0"><?= t('password') ?></label>
-                            <a href="lupa_password.php" class="small text-success text-decoration-none fw-semibold">
+                            <a href="<?= $base_url ?>lupa_password" class="small text-success text-decoration-none fw-semibold">
                                 <?= t('forgot_password') ?>
                             </a>
                         </div>
@@ -188,7 +188,7 @@ include '../includes/header.php';
                 <div class="text-center pt-2 border-top">
                     <p class="small text-muted mb-0">
                         <?= t('login_no_account') ?> 
-                        <a href="register.php" class="text-success fw-bold text-decoration-none">
+                        <a href="<?= $base_url ?>register" class="text-success fw-bold text-decoration-none">
                             <?= t('login_register_here') ?>
                         </a>
                     </p>
@@ -197,7 +197,7 @@ include '../includes/header.php';
 
             <!-- BACK TO HOME -->
             <div class="text-center mt-3">
-                <a href="../public/index.php" class="small text-muted text-decoration-none">
+                <a href="<?= $base_url ?>" class="small text-muted text-decoration-none">
                     <i class="fas fa-arrow-left me-1"></i> Kembali ke Beranda
                 </a>
             </div>

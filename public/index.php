@@ -1,6 +1,6 @@
 <?php
-include '../includes/config.php';
-include '../includes/header.php';
+require_once __DIR__ . '/../includes/config.php';
+require_once __DIR__ . '/../includes/header.php';
 
 // Ambil statistik publik riil
 $stat_petani = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) AS total FROM users WHERE role='petani'"))['total'] ?? 0;
@@ -234,7 +234,7 @@ $nama_desa = !empty($desa_setting['nama_desa']) ? $desa_setting['nama_desa'] : '
 <!-- PUBLIC NAVBAR -->
 <nav class="landing-nav">
     <div class="container">
-        <a href="index.php" class="landing-brand">
+        <a href="<?= $base_url ?>" class="landing-brand">
             <div class="brand-logo">
                 <i class="fas fa-seedling"></i>
             </div>
@@ -245,10 +245,10 @@ $nama_desa = !empty($desa_setting['nama_desa']) ? $desa_setting['nama_desa'] : '
         </a>
 
         <div class="d-flex align-items-center gap-3">
-            <a href="../pages/login.php" class="btn btn-outline-success rounded-pill px-4 fw-bold" style="font-size: 14px;">
+            <a href="<?= $base_url ?>login" class="btn btn-outline-success rounded-pill px-4 fw-bold" style="font-size: 14px;">
                 <i class="fas fa-sign-in-alt me-1"></i> <?= t('btn_login') ?>
             </a>
-            <a href="../pages/register.php" class="btn btn-success rounded-pill px-4 fw-bold d-none d-sm-inline-flex" style="background: #059669; border-color: #059669; font-size: 14px;">
+            <a href="<?= $base_url ?>register" class="btn btn-success rounded-pill px-4 fw-bold d-none d-sm-inline-flex" style="background: #059669; border-color: #059669; font-size: 14px;">
                 <?= t('btn_register') ?>
             </a>
         </div>
@@ -265,10 +265,10 @@ $nama_desa = !empty($desa_setting['nama_desa']) ? $desa_setting['nama_desa'] : '
         <p>Satu platform cerdas terpadu untuk monitoring siklus sawah petani, rekapitulasi aparatur desa, dan rekomendasi budidaya bersama Asisten AI.</p>
         
         <div class="hero-btn-group">
-            <a href="../pages/register.php" class="btn-hero-primary">
+            <a href="<?= $base_url ?>register" class="btn-hero-primary">
                 <i class="fas fa-user-plus"></i> Daftar Akun Petani Sekarang
             </a>
-            <a href="../pages/login.php" class="btn-hero-secondary">
+            <a href="<?= $base_url ?>login" class="btn-hero-secondary">
                 <i class="fas fa-sign-in-alt"></i> Masuk ke Dashboard
             </a>
         </div>
@@ -436,4 +436,4 @@ function openModal(title, iconClass, desc) {
 }
 </script>
 
-<?php include '../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -3,7 +3,7 @@ include '../includes/config.php';
 
 // ===== GUARD LOGIN =====
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: ' . $base_url . 'login');
     exit();
 }
 

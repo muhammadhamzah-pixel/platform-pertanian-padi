@@ -2,7 +2,7 @@
 include '../includes/config.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: ' . $base_url . 'login');
     exit();
 }
 

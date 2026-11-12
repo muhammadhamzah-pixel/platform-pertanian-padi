@@ -887,7 +887,7 @@ $fc_csrf = generate_csrf_token();
         fcSaveHistory();
 
         try {
-            const response = await fetch('../pages/process_ai.php', {
+            const response = await fetch('<?= $base_url ?>process_ai', {
                 method: 'POST',
                 body: formData
             });

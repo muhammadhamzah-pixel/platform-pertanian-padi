@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 if (mysqli_query($conn, $query)) {
                     if (kirimOTP($email, $otp, $nama)) {
                         $_SESSION['verify_email'] = $email;
-                        header('Location: verify_otp.php');
+                        header('Location: ' . $base_url . 'verify_otp');
                         exit();
                     } else {
                         mysqli_query($conn, "DELETE FROM users WHERE email='$email' AND email_verified=0");
@@ -64,7 +64,7 @@ include '../includes/header.php';
 
             <!-- BRAND LOGO -->
             <div class="text-center mb-4">
-                <a href="../public/index.php" class="d-inline-flex align-items-center gap-2 text-decoration-none">
+                <a href="<?= $base_url ?>" class="d-inline-flex align-items-center gap-2 text-decoration-none">
                     <div class="stat-card-icon stat-icon-emerald mx-auto shadow-sm" style="width: 50px; height: 50px; font-size: 1.4rem;">
                         <i class="fas fa-seedling"></i>
                     </div>
@@ -136,7 +136,7 @@ include '../includes/header.php';
                 <div class="text-center pt-2 border-top">
                     <p class="small text-muted mb-0">
                         <?= t('register_have_account') ?> 
-                        <a href="login.php" class="text-success fw-bold text-decoration-none">
+                        <a href="<?= $base_url ?>login" class="text-success fw-bold text-decoration-none">
                             <?= t('register_login_here') ?>
                         </a>
                     </p>
@@ -145,7 +145,7 @@ include '../includes/header.php';
 
             <!-- BACK TO HOME -->
             <div class="text-center mt-3">
-                <a href="../public/index.php" class="small text-muted text-decoration-none">
+                <a href="<?= $base_url ?>" class="small text-muted text-decoration-none">
                     <i class="fas fa-arrow-left me-1"></i> Kembali ke Beranda
                 </a>
             </div>

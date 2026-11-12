@@ -2,18 +2,18 @@
 include '../includes/config.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: ' . $base_url . 'login');
     exit();
 }
 
 // Menu Chat Bot kini telah dipisah dan dipindahkan ke pojok kanan bawah (Floating Chat Widget)
 $role = $_SESSION['role'] ?? 'petani';
 if ($role == 'petani') {
-    header('Location: dashboard_petani.php?open_chat=1');
+    header('Location: ' . $base_url . 'dashboard_petani?open_chat=1');
 } elseif ($role == 'perangkat_desa') {
-    header('Location: dashboard_desa.php?open_chat=1');
+    header('Location: ' . $base_url . 'dashboard_desa?open_chat=1');
 } else {
-    header('Location: dashboard_admin.php?open_chat=1');
+    header('Location: ' . $base_url . 'dashboard_admin?open_chat=1');
 }
 exit();
 ?>

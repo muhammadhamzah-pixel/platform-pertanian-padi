@@ -2,7 +2,7 @@
 include '../includes/config.php';
 
 if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
+    header('Location: ' . $base_url . 'login');
     exit();
 }
 
@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 if (isset($_GET['confirm']) && $_GET['confirm'] == 'yes') {
     // Verifikasi CSRF token
     if (!isset($_GET['csrf_token']) || !verify_csrf_token($_GET['csrf_token'])) {
-        header('Location: logout.php');
+        header('Location: ' . $base_url . 'logout');
         exit();
     }
     
@@ -45,16 +45,16 @@ if (isset($_GET['confirm']) && $_GET['confirm'] == 'yes') {
     session_destroy();
     
     // Redirect ke login
-    header('Location: login.php');
+    header('Location: ' . $base_url . 'login');
     exit();
 }
 
 // Tentukan URL dashboard sesuai role
-$dashboard_url = 'dashboard_petani.php'; // default
+$dashboard_url = $base_url . 'dashboard_petani'; // default
 if ($_SESSION['role'] == 'admin') {
-    $dashboard_url = 'dashboard_admin.php';
+    $dashboard_url = $base_url . 'dashboard_admin';
 } elseif ($_SESSION['role'] == 'perangkat_desa') {
-    $dashboard_url = 'dashboard_desa.php';
+    $dashboard_url = $base_url . 'dashboard_desa';
 }
 ?>
 <!DOCTYPE html>
@@ -71,7 +71,7 @@ if ($_SESSION['role'] == 'admin') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="../public/css/style.css">
+    <link rel="stylesheet" href="<?= $base_url ?>public/css/style.css">
     <style>
         body {
             min-height: 100vh;

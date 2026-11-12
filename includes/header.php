@@ -2,11 +2,14 @@
 // includes/header.php
 require_once __DIR__ . '/lang.php';
 
-// Deteksi base & relative path CSS otomatis
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host_url = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$is_in_public = (strpos($_SERVER['PHP_SELF'] ?? '', '/public/') !== false);
-$rel_css_base = $is_in_public ? 'css/' : '../public/css/';
+// Pastikan $base_url selalu tersedia dan akurat
+if (!isset($base_url)) {
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host_url = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    $folder_project = '/PLATFORM%20PERTANIAN%20PADI/';
+    $base_url = $protocol . '://' . $host_url . $folder_project;
+}
+$css_base = $base_url . 'public/css/';
 ?>
 <!DOCTYPE html>
 <html lang="<?= get_lang() ?>" dir="<?= get_lang() === 'ar' ? 'rtl' : 'ltr' ?>">
@@ -27,7 +30,7 @@ $rel_css_base = $is_in_public ? 'css/' : '../public/css/';
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     
     <!-- CSS Custom -->
-    <link rel="stylesheet" href="<?= $rel_css_base ?>style.css?v=2.0">
-    <link rel="stylesheet" href="<?= $rel_css_base ?>responsive.css?v=2.0">
+    <link rel="stylesheet" href="<?= $css_base ?>style.css?v=2.0">
+    <link rel="stylesheet" href="<?= $css_base ?>responsive.css?v=2.0">
 </head>
 <body>
