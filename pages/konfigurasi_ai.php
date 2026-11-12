@@ -1,11 +1,11 @@
 <?php
 // pages/konfigurasi_ai.php
-// Konfigurasi AI & Multi-Model Provider (Eksklusif Administrator)
+// Konfigurasi AI & Multi-Model Provider (Khusus Admin)
 
 include '../includes/config.php';
 include '../includes/gemini_config.php';
 
-// Proteksi Keamanan: KHUSUS ROLE ADMIN!
+// Proteksi Keamanan: KHUSUS ROLE ADMIN
 if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
     header('Location: ' . $base_url . 'login');
     exit();
@@ -20,7 +20,6 @@ $error = '';
 if (isset($_GET['ajax']) && $_GET['ajax'] === 'test_key') {
     header('Content-Type: application/json');
     
-    // Verifikasi CSRF
     $csrf = $_POST['csrf_token'] ?? '';
     if (!verify_csrf_token($csrf)) {
         echo json_encode(['success' => false, 'message' => 'Token CSRF tidak valid. Silakan refresh halaman.']);
@@ -55,7 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['ajax'])) {
         $temperature         = floatval($_POST['temperature'] ?? 0.3);
         $max_tokens          = intval($_POST['max_tokens'] ?? 2000);
 
-        // Sanitize ke database
         $active_model_esc        = mysqli_real_escape_string($conn, $active_model);
         $gemini_key_primary_esc  = mysqli_real_escape_string($conn, $gemini_key_primary);
         $gemini_key_backup_1_esc = mysqli_real_escape_string($conn, $gemini_key_backup_1);
@@ -65,7 +63,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['ajax'])) {
         $openai_api_key_esc      = mysqli_real_escape_string($conn, $openai_api_key);
         $ai_tone_esc             = mysqli_real_escape_string($conn, $ai_tone);
 
-        // Pastikan tabel ada & simpan ke ID 1
         $update_sql = "INSERT INTO ai_settings (
             id, active_model, gemini_key_primary, gemini_key_backup_1, gemini_key_backup_2,
             groq_api_key, deepseek_api_key, openai_api_key, auto_failover, ai_tone, temperature, max_tokens, updated_at
@@ -87,8 +84,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['ajax'])) {
             updated_at = NOW()";
 
         if (mysqli_query($conn, $update_sql)) {
-            $message = '✅ Konfigurasi AI & Cadangan Kunci berhasil diperbarui!';
-            catat_log($conn, $_SESSION['user_id'], $_SESSION['email'], $_SESSION['nama'], 'Update Konfigurasi AI', "Model aktif: $active_model");
+            $message = '✅ Pengaturan AI berhasil disimpan!';
+            catat_log($conn, $_SESSION['user_id'], $_SESSION['email'], $_SESSION['nama'], 'Update Konfigurasi AI', "Model: $active_model");
             regenerate_csrf_token();
         } else {
             $error = '❌ Gagal menyimpan konfigurasi: ' . mysqli_error($conn);
@@ -98,77 +95,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['ajax'])) {
 
 // Ambil data terbaru
 $settings = get_ai_settings($conn);
-$models = get_available_ai_models();
 $csrf_token = generate_csrf_token();
 
 include '../includes/navbar.php';
 ?>
 
 <style>
-/* Styling Elegan Khusus Konfigurasi AI */
-.model-picker-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-    margin-bottom: 24px;
-}
-.model-card-option {
-    border: 2px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 16px;
-    background: #ffffff;
-    cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-.model-card-option:hover {
-    border-color: #10b981;
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.15);
-}
-.model-card-option.active {
-    border-color: #059669;
-    background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
-    box-shadow: 0 10px 25px -5px rgba(5, 150, 105, 0.25);
-}
-.model-card-radio {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    accent-color: #059669;
-    width: 20px;
-    height: 20px;
-}
-.provider-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 10px;
-    border-radius: 9999px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-}
-.key-slot-card {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-    border-radius: 14px;
-    padding: 18px;
-    margin-bottom: 16px;
-    transition: all 0.2s ease;
-}
-.key-slot-card:focus-within {
-    border-color: #10b981;
-    background: #ffffff;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);
-}
 .test-result-box {
-    margin-top: 10px;
+    margin-top: 8px;
     font-size: 13px;
     display: none;
     padding: 8px 12px;
@@ -176,12 +110,12 @@ include '../includes/navbar.php';
 }
 </style>
 
-<!-- SIGNATURE DASH HERO HEADER -->
+<!-- SIGNATURE DASH HERO HEADER (SEDERHANA & BERSIH) -->
 <div class="dash-hero-header">
     <div class="dash-hero-inner">
         <div class="dash-hero-title">
-            <h1><i class="fas fa-microchip"></i> Konfigurasi AI & Multi-Model Pool</h1>
-            <p>Pusat kendali AI tingkat Administrator: kelola 10 model pilihan, rotasi cadangan API Key, dan auto-failover anti-limit.</p>
+            <h1><i class="fas fa-microchip"></i> Konfigurasi AI</h1>
+            <p>Kelola pilihan model dan cadangan API Key untuk sistem AI Admin.</p>
         </div>
         <div class="dash-hero-actions">
             <a href="<?= $base_url ?>dashboard_admin" class="btn-outline-white">
@@ -209,74 +143,67 @@ include '../includes/navbar.php';
         </div>
     <?php endif; ?>
 
-    <!-- BANNER PERINGATAN EKSKLUSIF ADMIN -->
-    <div class="alert-modern alert-modern-warning mb-4" style="background: linear-gradient(135deg, #fffbeb, #fef3c7); border-color: #fde68a;">
-        <i class="fas fa-shield-alt fs-4 text-warning"></i>
-        <div>
-            <strong class="text-dark">Fitur Eksklusif Administrator:</strong> 
-            Pengaturan di halaman ini mengendalikan mesin kecerdasan buatan untuk seluruh sistem desa.
-            Semua pengguna (Petani, Perangkat Desa, dan Admin) akan otomatis menikmati model aktif dan cadangan API Key yang Anda tentukan di sini tanpa mengubah hak akses database mereka.
-        </div>
-    </div>
-
     <form method="POST" action="" id="formAiConfig">
         <input type="hidden" name="csrf_token" id="formCsrfToken" value="<?= $csrf_token ?>">
 
-        <!-- BAGIAN 1: PEMILIHAN MODEL AI AKTIF (10 MODEL) -->
+        <!-- BAGIAN 1: PEMILIHAN MODEL AI AKTIF (RINGKAS & BERSIH) -->
         <div class="card-modern mb-4">
-            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                <div>
-                    <h5 class="fw-bold text-dark mb-1">
-                        <i class="fas fa-layer-group text-success me-2"></i> 1. Pilih Model AI Utama (10 Pilihan Lintas Provider)
-                    </h5>
-                    <p class="text-muted small mb-0">Klik pada salah satu kartu model untuk menjadikannya sebagai mesin AI aktif sistem.</p>
-                </div>
-                <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-bold border border-success">
-                    <i class="fas fa-check-circle me-1"></i> Model Aktif: <strong id="lblActiveModel"><?= htmlspecialchars($settings['active_model']) ?></strong>
+            <div class="d-flex align-items-center justify-content-between mb-3">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="fas fa-robot text-success me-2"></i> Model AI Aktif
+                </h5>
+                <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-bold border border-success" id="badgeActiveModel">
+                    <?= htmlspecialchars($settings['active_model']) ?>
                 </span>
             </div>
 
-            <div class="model-picker-grid">
-                <?php foreach ($models as $mId => $m): ?>
-                    <?php $isActive = ($settings['active_model'] === $mId); ?>
-                    <label class="model-card-option <?= $isActive ? 'active' : '' ?>" onclick="selectModel('<?= $mId ?>', this)">
-                        <input type="radio" name="active_model" value="<?= $mId ?>" class="model-card-radio" <?= $isActive ? 'checked' : '' ?>>
-                        
-                        <div>
-                            <span class="provider-badge bg-<?= $m['badge_color'] ?>-subtle text-<?= $m['badge_color'] ?> border border-<?= $m['badge_color'] ?>">
-                                <?= htmlspecialchars($m['provider']) ?> • <?= htmlspecialchars($m['badge']) ?>
-                            </span>
-                            <h6 class="fw-bold text-dark mb-1 mt-1"><?= htmlspecialchars($m['name']) ?></h6>
-                            <p class="text-muted small mb-0" style="font-size: 12px; line-height: 1.4;">
-                                <?= htmlspecialchars($m['desc']) ?>
-                            </p>
-                        </div>
-                    </label>
-                <?php endforeach; ?>
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <label class="form-label-modern small text-muted mb-1">Pilih salah satu dari 10 model yang tersedia:</label>
+                    <select name="active_model" class="form-select form-control-modern fs-6" id="modelSelector" onchange="updateModelBadge(this)">
+                        <optgroup label="── Google Gemini ──">
+                            <option value="gemini-1.5-flash" <?= $settings['active_model'] == 'gemini-1.5-flash' ? 'selected' : '' ?>>Gemini 1.5 Flash (Rekomendasi - Cepat & Hemat Kuota)</option>
+                            <option value="gemini-1.5-pro" <?= $settings['active_model'] == 'gemini-1.5-pro' ? 'selected' : '' ?>>Gemini 1.5 Pro (Super Cerdas - Analisis Detail)</option>
+                            <option value="gemini-2.0-flash-exp" <?= $settings['active_model'] == 'gemini-2.0-flash-exp' ? 'selected' : '' ?>>Gemini 2.0 Flash (Next-Gen 2026)</option>
+                            <option value="gemini-1.5-flash-8b" <?= $settings['active_model'] == 'gemini-1.5-flash-8b' ? 'selected' : '' ?>>Gemini 1.5 Flash-8B (Ultra Ringan)</option>
+                        </optgroup>
+                        <optgroup label="── Groq Cloud (Meta Llama & Mixtral) ──">
+                            <option value="llama-3.3-70b-versatile" <?= $settings['active_model'] == 'llama-3.3-70b-versatile' ? 'selected' : '' ?>>Meta Llama 3.3 70B (Open-Source Flagship)</option>
+                            <option value="llama-3.1-8b-instant" <?= $settings['active_model'] == 'llama-3.1-8b-instant' ? 'selected' : '' ?>>Meta Llama 3.1 8B Instant (Respon Kilat)</option>
+                            <option value="mixtral-8x7b-32768" <?= $settings['active_model'] == 'mixtral-8x7b-32768' ? 'selected' : '' ?>>Mixtral 8x7B (Pakar Data & Logika)</option>
+                        </optgroup>
+                        <optgroup label="── DeepSeek ──">
+                            <option value="deepseek-chat" <?= $settings['active_model'] == 'deepseek-chat' ? 'selected' : '' ?>>DeepSeek-V3 (Setara GPT-4o)</option>
+                            <option value="deepseek-reasoner" <?= $settings['active_model'] == 'deepseek-reasoner' ? 'selected' : '' ?>>DeepSeek-R1 (Penalaran Mendalam)</option>
+                        </optgroup>
+                        <optgroup label="── OpenAI ──">
+                            <option value="gpt-4o-mini" <?= $settings['active_model'] == 'gpt-4o-mini' ? 'selected' : '' ?>>GPT-4o Mini (OpenAI)</option>
+                        </optgroup>
+                    </select>
+                </div>
+                <div class="col-md-4 mt-2 mt-md-0">
+                    <p class="text-muted small mb-0 pt-md-3">
+                        Model yang dipilih akan digunakan untuk melayani percakapan dan analisis data sistem.
+                    </p>
+                </div>
             </div>
         </div>
 
-        <!-- BAGIAN 2: POOL API KEY GOOGLE GEMINI (UTAMA & CADANGAN) -->
+        <!-- BAGIAN 2: API KEY GOOGLE GEMINI (UTAMA & CADANGAN) -->
         <div class="card-modern mb-4">
             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
-                <div>
-                    <h5 class="fw-bold text-dark mb-1">
-                        <i class="fab fa-google text-success me-2"></i> 2. Pool API Key Google Gemini (3 Tingkat Cadangan)
-                    </h5>
-                    <p class="text-muted small mb-0">Isi kunci API dari Google AI Studio. Sistem otomatis berganti ke cadangan bila kuota utama habis.</p>
-                </div>
-                <!-- TOMBOL PINTAS BUAT KEY BARU DI AI STUDIO -->
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success rounded-pill fw-bold px-3 py-2">
+                <h5 class="fw-bold text-dark mb-0">
+                    <i class="fab fa-google text-success me-2"></i> API Key Google Gemini
+                </h5>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-success rounded-pill fw-bold">
                     <i class="fas fa-external-link-alt me-1"></i> 🔑 + Buat API Key di Google AI Studio
                 </a>
             </div>
 
             <!-- SLOT 1: UTAMA -->
-            <div class="key-slot-card">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <label class="form-label-modern mb-0 fw-bold text-dark">
-                        <span class="badge bg-success me-1">UTAMA</span> API Key Gemini Primer (Wajib)
-                    </label>
+            <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <label class="form-label-modern mb-0 fw-bold">API Key Utama (Wajib)</label>
                     <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" onclick="testSingleKey('gemini', 'gemini_key_primary', 'res_gemini_1')">
                         <i class="fas fa-bolt text-warning me-1"></i> Tes Koneksi
                     </button>
@@ -284,7 +211,7 @@ include '../includes/navbar.php';
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="fas fa-key text-muted"></i></span>
                     <input type="password" name="gemini_key_primary" id="gemini_key_primary" class="form-control form-control-modern border-start-0" 
-                           placeholder="AQ.Ab8RN... (Tempel API Key Gemini Utama Anda di sini)" 
+                           placeholder="Masukkan API Key Gemini Utama" 
                            value="<?= htmlspecialchars($settings['gemini_key_primary']) ?>" required>
                     <button class="btn btn-outline-secondary border" type="button" onclick="toggleVisibility('gemini_key_primary', this)">
                         <i class="far fa-eye"></i>
@@ -294,11 +221,9 @@ include '../includes/navbar.php';
             </div>
 
             <!-- SLOT 2: CADANGAN 1 -->
-            <div class="key-slot-card">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <label class="form-label-modern mb-0 fw-bold text-dark">
-                        <span class="badge bg-secondary me-1">CADANGAN 1</span> API Key Gemini Cadangan #1
-                    </label>
+            <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <label class="form-label-modern mb-0">API Key Cadangan #1</label>
                     <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" onclick="testSingleKey('gemini', 'gemini_key_backup_1', 'res_gemini_2')">
                         <i class="fas fa-bolt text-warning me-1"></i> Tes Koneksi
                     </button>
@@ -306,7 +231,7 @@ include '../includes/navbar.php';
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="fas fa-shield-alt text-muted"></i></span>
                     <input type="password" name="gemini_key_backup_1" id="gemini_key_backup_1" class="form-control form-control-modern border-start-0" 
-                           placeholder="AQ.Ab8RN... (Kunci cadangan otomatis bila kunci utama limit)" 
+                           placeholder="Kunci cadangan otomatis jika kuota utama habis (opsional)" 
                            value="<?= htmlspecialchars($settings['gemini_key_backup_1']) ?>">
                     <button class="btn btn-outline-secondary border" type="button" onclick="toggleVisibility('gemini_key_backup_1', this)">
                         <i class="far fa-eye"></i>
@@ -316,11 +241,9 @@ include '../includes/navbar.php';
             </div>
 
             <!-- SLOT 3: CADANGAN 2 -->
-            <div class="key-slot-card">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <label class="form-label-modern mb-0 fw-bold text-dark">
-                        <span class="badge bg-secondary me-1">CADANGAN 2</span> API Key Gemini Cadangan #2
-                    </label>
+            <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <label class="form-label-modern mb-0">API Key Cadangan #2</label>
                     <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" onclick="testSingleKey('gemini', 'gemini_key_backup_2', 'res_gemini_3')">
                         <i class="fas fa-bolt text-warning me-1"></i> Tes Koneksi
                     </button>
@@ -328,7 +251,7 @@ include '../includes/navbar.php';
                 <div class="input-group">
                     <span class="input-group-text bg-white border-end-0"><i class="fas fa-life-ring text-muted"></i></span>
                     <input type="password" name="gemini_key_backup_2" id="gemini_key_backup_2" class="form-control form-control-modern border-start-0" 
-                           placeholder="AQ.Ab8RN... (Kunci lapis ketiga)" 
+                           placeholder="Kunci cadangan lapis ketiga (opsional)" 
                            value="<?= htmlspecialchars($settings['gemini_key_backup_2']) ?>">
                     <button class="btn btn-outline-secondary border" type="button" onclick="toggleVisibility('gemini_key_backup_2', this)">
                         <i class="far fa-eye"></i>
@@ -337,39 +260,28 @@ include '../includes/navbar.php';
                 <div id="res_gemini_3" class="test-result-box"></div>
             </div>
 
-            <!-- NOTIFIKASI AUTO FAILOVER -->
-            <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded-3 border">
-                <div class="d-flex align-items-center gap-3">
-                    <i class="fas fa-sync-alt fa-2x text-success"></i>
-                    <div>
-                        <strong class="d-block text-dark">Fitur Auto-Failover Pintar (Anti-Limit)</strong>
-                        <small class="text-muted">Jika diaktifkan, sistem secara otomatis merotasi ke kunci cadangan ketika terjadi batas kuota Google (Error 429).</small>
-                    </div>
-                </div>
-                <div class="form-check form-switch fs-4 mb-0">
-                    <input class="form-check-input" type="checkbox" name="auto_failover" id="auto_failover" <?= !empty($settings['auto_failover']) ? 'checked' : '' ?>>
-                </div>
+            <!-- AUTO FAILOVER TOGGLE -->
+            <div class="form-check form-switch pt-2 mt-2 border-top">
+                <input class="form-check-input" type="checkbox" name="auto_failover" id="auto_failover" <?= !empty($settings['auto_failover']) ? 'checked' : '' ?>>
+                <label class="form-check-label fw-semibold text-dark" for="auto_failover">
+                    Otomatis beralih ke kunci cadangan jika kunci utama mencapai batas kuota (Error 429)
+                </label>
             </div>
         </div>
 
-        <!-- BAGIAN 3: PROVIDER EKSTERNAL (GROQ, DEEPSEEK, OPENAI) -->
+        <!-- BAGIAN 3: PROVIDER LAIN (GROQ / DEEPSEEK / OPENAI) -->
         <div class="card-modern mb-4">
-            <div class="mb-3">
-                <h5 class="fw-bold text-dark mb-1">
-                    <i class="fas fa-network-wired text-primary me-2"></i> 3. Kunci API Provider Lain (Groq / DeepSeek / OpenAI)
-                </h5>
-                <p class="text-muted small mb-0">Opsional: Diperlukan hanya jika Anda memilih model Llama, Mixtral, DeepSeek, atau ChatGPT pada pilihan model di atas.</p>
-            </div>
+            <h5 class="fw-bold text-dark mb-3">
+                <i class="fas fa-network-wired text-primary me-2"></i> API Key Provider Lain (Opsional)
+            </h5>
 
             <!-- GROQ -->
-            <div class="key-slot-card mb-3">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <label class="form-label-modern mb-0 fw-bold text-dark">
-                        <span class="badge bg-dark me-1">GROQ CLOUD</span> API Key Groq (Meta Llama 3.3 & Mixtral)
-                    </label>
-                    <div class="d-flex gap-2">
+            <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <label class="form-label-modern mb-0">Groq API Key (Meta Llama & Mixtral)</label>
+                    <div class="d-flex gap-2 align-items-center">
                         <a href="https://console.groq.com/keys" target="_blank" class="small text-decoration-none text-muted">
-                            <i class="fas fa-external-link-alt"></i> Buat Key Groq
+                            <i class="fas fa-external-link-alt"></i> Buat Key
                         </a>
                         <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" onclick="testSingleKey('groq', 'groq_api_key', 'res_groq')">
                             <i class="fas fa-bolt text-warning me-1"></i> Tes
@@ -378,22 +290,19 @@ include '../includes/navbar.php';
                 </div>
                 <div class="input-group">
                     <input type="password" name="groq_api_key" id="groq_api_key" class="form-control form-control-modern" 
-                           placeholder="gsk_... (Dapatkan gratis di console.groq.com)" 
-                           value="<?= htmlspecialchars($settings['groq_api_key']) ?>">
+                           placeholder="gsk_..." value="<?= htmlspecialchars($settings['groq_api_key']) ?>">
                     <button class="btn btn-outline-secondary border" type="button" onclick="toggleVisibility('groq_api_key', this)"><i class="far fa-eye"></i></button>
                 </div>
                 <div id="res_groq" class="test-result-box"></div>
             </div>
 
             <!-- DEEPSEEK -->
-            <div class="key-slot-card mb-3">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <label class="form-label-modern mb-0 fw-bold text-dark">
-                        <span class="badge bg-primary me-1">DEEPSEEK</span> API Key DeepSeek (V3 & R1 Reasoner)
-                    </label>
-                    <div class="d-flex gap-2">
+            <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <label class="form-label-modern mb-0">DeepSeek API Key (V3 & R1)</label>
+                    <div class="d-flex gap-2 align-items-center">
                         <a href="https://platform.deepseek.com/api_keys" target="_blank" class="small text-decoration-none text-muted">
-                            <i class="fas fa-external-link-alt"></i> Buat Key DeepSeek
+                            <i class="fas fa-external-link-alt"></i> Buat Key
                         </a>
                         <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" onclick="testSingleKey('deepseek', 'deepseek_api_key', 'res_deepseek')">
                             <i class="fas fa-bolt text-warning me-1"></i> Tes
@@ -402,22 +311,19 @@ include '../includes/navbar.php';
                 </div>
                 <div class="input-group">
                     <input type="password" name="deepseek_api_key" id="deepseek_api_key" class="form-control form-control-modern" 
-                           placeholder="sk-... (Dapatkan di platform.deepseek.com)" 
-                           value="<?= htmlspecialchars($settings['deepseek_api_key']) ?>">
+                           placeholder="sk-..." value="<?= htmlspecialchars($settings['deepseek_api_key']) ?>">
                     <button class="btn btn-outline-secondary border" type="button" onclick="toggleVisibility('deepseek_api_key', this)"><i class="far fa-eye"></i></button>
                 </div>
                 <div id="res_deepseek" class="test-result-box"></div>
             </div>
 
             <!-- OPENAI -->
-            <div class="key-slot-card mb-0">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <label class="form-label-modern mb-0 fw-bold text-dark">
-                        <span class="badge bg-success me-1">OPENAI</span> API Key OpenAI (GPT-4o Mini)
-                    </label>
-                    <div class="d-flex gap-2">
+            <div class="mb-0">
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <label class="form-label-modern mb-0">OpenAI API Key (GPT-4o Mini)</label>
+                    <div class="d-flex gap-2 align-items-center">
                         <a href="https://platform.openai.com/api-keys" target="_blank" class="small text-decoration-none text-muted">
-                            <i class="fas fa-external-link-alt"></i> Buat Key OpenAI
+                            <i class="fas fa-external-link-alt"></i> Buat Key
                         </a>
                         <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" onclick="testSingleKey('openai', 'openai_api_key', 'res_openai')">
                             <i class="fas fa-bolt text-warning me-1"></i> Tes
@@ -426,32 +332,31 @@ include '../includes/navbar.php';
                 </div>
                 <div class="input-group">
                     <input type="password" name="openai_api_key" id="openai_api_key" class="form-control form-control-modern" 
-                           placeholder="sk-proj-... (Dapatkan di platform.openai.com)" 
-                           value="<?= htmlspecialchars($settings['openai_api_key']) ?>">
+                           placeholder="sk-proj-..." value="<?= htmlspecialchars($settings['openai_api_key']) ?>">
                     <button class="btn btn-outline-secondary border" type="button" onclick="toggleVisibility('openai_api_key', this)"><i class="far fa-eye"></i></button>
                 </div>
                 <div id="res_openai" class="test-result-box"></div>
             </div>
         </div>
 
-        <!-- BAGIAN 4: PARAMETER PERILAKU & GAYA JAWABAN (TONE) -->
+        <!-- BAGIAN 4: GAYA & KARAKTERISTIK RESPON -->
         <div class="card-modern mb-4">
             <h5 class="fw-bold text-dark mb-3">
-                <i class="fas fa-sliders-h text-warning me-2"></i> 4. Karakteristik & Gaya Respon AI
+                <i class="fas fa-sliders-h text-warning me-2"></i> Karakteristik Respon AI
             </h5>
 
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label-modern fw-bold">Gaya Tutur Percakapan (Tone):</label>
+                    <label class="form-label-modern fw-bold">Gaya Bahasa (Tone):</label>
                     <select name="ai_tone" class="form-select form-control-modern">
                         <option value="seimbang" <?= ($settings['ai_tone'] === 'seimbang') ? 'selected' : '' ?>>
-                            🟢 Ramah, Seimbang & Informatif (Standar)
+                            🟢 Ramah & Informatif (Standar)
                         </option>
                         <option value="ringkas" <?= ($settings['ai_tone'] === 'ringkas') ? 'selected' : '' ?>>
                             ⚡ Praktis & Ringkas (To-the-point)
                         </option>
                         <option value="mendalam" <?= ($settings['ai_tone'] === 'mendalam') ? 'selected' : '' ?>>
-                            📚 Edukatif & Mendalam (Pakar Agronomi)
+                            📚 Edukatif & Mendalam (Pakar Pertanian)
                         </option>
                     </select>
                 </div>
@@ -459,20 +364,18 @@ include '../includes/navbar.php';
                 <div class="col-md-3">
                     <label class="form-label-modern fw-bold">Kreativitas (Temperature):</label>
                     <input type="number" step="0.1" min="0.0" max="1.0" name="temperature" class="form-control form-control-modern" 
-                           value="<?= htmlspecialchars($settings['temperature']) ?>" title="0.1-0.3 untuk fokus data SQL, 0.7 untuk kreatif">
-                    <small class="text-muted" style="font-size: 11px;">Rekomendasi: 0.3 (Akurat data)</small>
+                           value="<?= htmlspecialchars($settings['temperature']) ?>">
                 </div>
 
                 <div class="col-md-3">
                     <label class="form-label-modern fw-bold">Maksimal Token:</label>
                     <input type="number" step="100" min="500" max="4000" name="max_tokens" class="form-control form-control-modern" 
                            value="<?= htmlspecialchars($settings['max_tokens']) ?>">
-                    <small class="text-muted" style="font-size: 11px;">Batas panjang respon</small>
                 </div>
             </div>
         </div>
 
-        <!-- ACTION BUTTONS -->
+        <!-- TOMBOL SIMPAN -->
         <div class="d-flex align-items-center justify-content-end gap-3 pb-5">
             <a href="<?= $base_url ?>dashboard_admin" class="btn btn-light px-4 py-2 rounded-pill fw-semibold border">
                 Batal
@@ -502,13 +405,9 @@ function toggleVisibility(inputId, btn) {
     }
 }
 
-// Select Model Card Interactive
-function selectModel(modelId, cardEl) {
-    document.querySelectorAll('.model-card-option').forEach(c => c.classList.remove('active'));
-    cardEl.classList.add('active');
-    const radio = cardEl.querySelector('input[type="radio"]');
-    if (radio) radio.checked = true;
-    document.getElementById('lblActiveModel').innerText = modelId;
+// Update Active Model Badge on select change
+function updateModelBadge(selectEl) {
+    document.getElementById('badgeActiveModel').innerText = selectEl.value;
 }
 
 // Test Single Key AJAX
