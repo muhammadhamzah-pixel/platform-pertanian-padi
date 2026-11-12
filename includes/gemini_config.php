@@ -174,80 +174,42 @@ function test_ai_connection($provider, $api_key, $model = null) {
     $start_time = microtime(true);
 
     if ($provider === 'gemini') {
-        // Daftar kandidat model yang valid (prioritaskan yang aktif di server Google saat ini)
-        $models_to_test = array_values(array_filter(array_unique([
-            $model,
-            'gemini-3.5-flash-lite',
-            'gemini-3.5-flash',
-            'gemini-2.5-flash'
-        ])));
+        // Validasi instan ke Google AI (super cepat ~300ms, akurat, dan hemat kuota)
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models?key=' . urlencode($api_key);
 
-        $payload = [
-            'contents' => [
-                ['parts' => [['text' => 'ping']]]
-            ],
-            'generationConfig' => [
-                'maxOutputTokens' => 5,
-                'temperature' => 0.1
-            ]
-        ];
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
 
-        $last_code = 0;
-        $last_err = '';
-
-        foreach ($models_to_test as $test_model) {
-            $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . $test_model . ':generateContent?key=' . urlencode($api_key);
-
-            $ch = curl_init($url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-            curl_setopt($ch, CURLOPT_TIMEOUT, 12);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-
-            $response = curl_exec($ch);
-            $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            $curl_err = curl_error($ch);
-            curl_close($ch);
-
-            $last_code = $http_code;
-            $last_err = $curl_err;
-            $latency = round((microtime(true) - $start_time) * 1000);
-
-            if ($http_code === 200) {
-                return [
-                    'success' => true,
-                    'status' => 'active',
-                    'code' => 200,
-                    'latency' => $latency,
-                    'message' => "🟢 Koneksi Sukses! Model Gemini ($test_model) merespon dalam {$latency}ms."
-                ];
-            }
-
-            // Jika 404, coba kandidat model berikutnya
-            if ($http_code === 404) {
-                continue;
-            }
-
-            // Jika 429 atau 400/403, berarti API Key-nya yang limit atau invalid, stop loop
-            break;
-        }
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_err = curl_error($ch);
+        curl_close($ch);
 
         $latency = round((microtime(true) - $start_time) * 1000);
 
-        if ($last_err) {
+        if ($curl_err) {
             return [
                 'success' => false,
                 'status' => 'network_error',
                 'code' => 0,
                 'latency' => $latency,
-                'message' => 'Gagal terhubung ke Google AI: ' . $last_err
+                'message' => 'Gagal terhubung ke Google AI: ' . $curl_err
             ];
         }
 
-        if ($last_code === 429) {
+        if ($http_code === 200) {
+            return [
+                'success' => true,
+                'status' => 'active',
+                'code' => 200,
+                'latency' => $latency,
+                'message' => "🟢 Koneksi Sukses! API Key Google Gemini aktif dan siap digunakan ({$latency}ms)."
+            ];
+        } elseif ($http_code === 429) {
             return [
                 'success' => false,
                 'status' => 'rate_limited',
@@ -255,21 +217,21 @@ function test_ai_connection($provider, $api_key, $model = null) {
                 'latency' => $latency,
                 'message' => "🟡 Kuota Habis / Rate Limit (Error 429). Sistem akan otomatis memakai key cadangan."
             ];
-        } elseif ($last_code === 400 || $last_code === 403) {
+        } elseif ($http_code === 400 || $http_code === 403) {
             return [
                 'success' => false,
                 'status' => 'invalid_key',
-                'code' => $last_code,
+                'code' => $http_code,
                 'latency' => $latency,
-                'message' => "🔴 API Key Ditolak / Tidak Valid (Error $last_code). Periksa kembali key Anda."
+                'message' => "🔴 API Key Ditolak / Tidak Valid (Error $http_code). Periksa kembali key Anda."
             ];
         } else {
             return [
                 'success' => false,
                 'status' => 'error',
-                'code' => $last_code,
+                'code' => $http_code,
                 'latency' => $latency,
-                'message' => "⚠️ Respon Google: HTTP Code $last_code."
+                'message' => "⚠️ Respon Google: HTTP Code $http_code."
             ];
         }
     } else {
@@ -299,7 +261,8 @@ function test_ai_connection($provider, $api_key, $model = null) {
             'Authorization: Bearer ' . $api_key
         ]);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 12);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 
