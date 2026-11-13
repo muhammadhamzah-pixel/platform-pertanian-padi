@@ -235,33 +235,21 @@ function test_ai_connection($provider, $api_key, $model = null) {
             ];
         }
     } else {
-        // OpenAI-Compatible (Groq, DeepSeek, OpenAI)
-        $endpoint = 'https://api.groq.com/openai/v1/chat/completions';
-        $test_model = $model ?: 'llama-3.1-8b-instant';
+        // OpenAI-Compatible (Groq, DeepSeek, OpenAI) via endpoint metadata /models yang cepat dan bebas error model 404
+        $endpoint = 'https://api.groq.com/openai/v1/models';
 
         if ($provider === 'deepseek') {
-            $endpoint = 'https://api.deepseek.com/chat/completions';
-            $test_model = $model ?: 'deepseek-chat';
+            $endpoint = 'https://api.deepseek.com/models';
         } elseif ($provider === 'openai') {
-            $endpoint = 'https://api.openai.com/v1/chat/completions';
-            $test_model = $model ?: 'gpt-4o-mini';
+            $endpoint = 'https://api.openai.com/v1/models';
         }
-
-        $payload = [
-            'model' => $test_model,
-            'messages' => [['role' => 'user', 'content' => 'ping']],
-            'max_tokens' => 5
-        ];
 
         $ch = curl_init($endpoint);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Content-Type: application/json',
             'Authorization: Bearer ' . $api_key
         ]);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
@@ -289,7 +277,15 @@ function test_ai_connection($provider, $api_key, $model = null) {
                 'status' => 'active',
                 'code' => 200,
                 'latency' => $latency,
-                'message' => "🟢 Koneksi Sukses! Provider " . ucfirst($provider) . " ($test_model) merespon dalam {$latency}ms."
+                'message' => "🟢 Koneksi Sukses! Provider " . ucfirst($provider) . " aktif dan siap digunakan ({$latency}ms)."
+            ];
+        } elseif ($http_code === 401 || $http_code === 403) {
+            return [
+                'success' => false,
+                'status' => 'invalid_key',
+                'code' => $http_code,
+                'latency' => $latency,
+                'message' => "🔴 API Key " . ucfirst($provider) . " tidak valid atau ditolak (Error $http_code). Periksa kembali key Anda."
             ];
         } elseif ($http_code === 429) {
             return [
