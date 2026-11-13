@@ -899,6 +899,9 @@ $fc_csrf = generate_csrf_token();
                 // Update CSRF & Limit
                 if (result.new_csrf_token) {
                     csrfInput.value = result.new_csrf_token;
+                    document.querySelectorAll('input[name="csrf_token"]').forEach(el => {
+                        el.value = result.new_csrf_token;
+                    });
                 }
                 if (typeof result.sisa_limit !== 'undefined') {
                     sisaLimit = result.sisa_limit;

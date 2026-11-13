@@ -42,14 +42,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['ajax'])) {
     if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
         $error = t('err_csrf');
     } else {
-        $active_model        = sanitize_input($_POST['active_model'] ?? 'gemini-1.5-flash');
+        $active_model        = sanitize_input($_POST['active_model'] ?? 'gemini-3.5-flash-lite');
         $gemini_key_primary  = trim($_POST['gemini_key_primary'] ?? '');
-        $gemini_key_backup_1 = trim($_POST['gemini_key_backup_1'] ?? '');
-        $gemini_key_backup_2 = trim($_POST['gemini_key_backup_2'] ?? '');
+        $gemini_key_backup_1 = '';
+        $gemini_key_backup_2 = '';
         $groq_api_key        = trim($_POST['groq_api_key'] ?? '');
         $deepseek_api_key    = trim($_POST['deepseek_api_key'] ?? '');
         $openai_api_key      = trim($_POST['openai_api_key'] ?? '');
-        $auto_failover       = isset($_POST['auto_failover']) ? 1 : 0;
+        $auto_failover       = 0;
         $ai_tone             = sanitize_input($_POST['ai_tone'] ?? 'seimbang');
         $temperature         = floatval($_POST['temperature'] ?? 0.3);
         $max_tokens          = intval($_POST['max_tokens'] ?? 2000);
@@ -84,13 +84,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_GET['ajax'])) {
             updated_at = NOW()";
 
         if (mysqli_query($conn, $update_sql)) {
-            $message = '✅ Pengaturan AI berhasil disimpan!';
+            $_SESSION['flash_message'] = '✅ Pengaturan AI berhasil disimpan!';
             catat_log($conn, $_SESSION['user_id'], $_SESSION['email'], $_SESSION['nama'], 'Update Konfigurasi AI', "Model: $active_model");
-            regenerate_csrf_token();
+            header('Location: ' . $base_url . 'konfigurasi_ai');
+            exit();
         } else {
             $error = '❌ Gagal menyimpan konfigurasi: ' . mysqli_error($conn);
         }
     }
+}
+
+// Flash message
+if (isset($_SESSION['flash_message'])) {
+    $message = $_SESSION['flash_message'];
+    unset($_SESSION['flash_message']);
 }
 
 // Ambil data terbaru
@@ -115,7 +122,7 @@ include '../includes/navbar.php';
     <div class="dash-hero-inner">
         <div class="dash-hero-title">
             <h1><i class="fas fa-microchip"></i> Konfigurasi AI</h1>
-            <p>Kelola pilihan model dan cadangan API Key untuk sistem AI Admin.</p>
+            <p>Kelola pilihan model dan API Key untuk sistem AI Admin.</p>
         </div>
         <div class="dash-hero-actions">
             <a href="<?= $base_url ?>dashboard_admin" class="btn-outline-white">
@@ -162,22 +169,22 @@ include '../includes/navbar.php';
                     <label class="form-label-modern small text-muted mb-1">Pilih salah satu dari 10 model yang tersedia:</label>
                     <select name="active_model" class="form-select form-control-modern fs-6" id="modelSelector" onchange="updateModelBadge(this)">
                         <optgroup label="── Google Gemini ──">
-                            <option value="gemini-3.5-flash-lite" <?= $settings['active_model'] == 'gemini-3.5-flash-lite' ? 'selected' : '' ?>>Gemini 3.5 Flash Lite (Rekomendasi - Cepat & Hemat Kuota)</option>
-                            <option value="gemini-3.5-flash" <?= $settings['active_model'] == 'gemini-3.5-flash' ? 'selected' : '' ?>>Gemini 3.5 Flash (Super Cerdas - Analisis Detail)</option>
-                            <option value="gemini-2.5-flash" <?= $settings['active_model'] == 'gemini-2.5-flash' ? 'selected' : '' ?>>Gemini 2.5 Flash (Versi Stabil)</option>
-                            <option value="gemini-2.5-pro" <?= $settings['active_model'] == 'gemini-2.5-pro' ? 'selected' : '' ?>>Gemini 2.5 Pro (Penalaran Kompleks)</option>
+                            <option value="gemini-3.5-flash-lite" <?= $settings['active_model'] == 'gemini-3.5-flash-lite' ? 'selected' : '' ?>>Gemini 3.5 Flash Lite - Cepat dan Hemat Kuota</option>
+                            <option value="gemini-3.5-flash" <?= $settings['active_model'] == 'gemini-3.5-flash' ? 'selected' : '' ?>>Gemini 3.5 Flash - Super Cerdas dan Analisis Detail</option>
+                            <option value="gemini-2.5-flash" <?= $settings['active_model'] == 'gemini-2.5-flash' ? 'selected' : '' ?>>Gemini 2.5 Flash - Versi Stabil</option>
+                            <option value="gemini-2.5-pro" <?= $settings['active_model'] == 'gemini-2.5-pro' ? 'selected' : '' ?>>Gemini 2.5 Pro - Penalaran Kompleks</option>
                         </optgroup>
-                        <optgroup label="── Groq Cloud (Meta Llama & Mixtral) ──">
-                            <option value="llama-3.3-70b-versatile" <?= $settings['active_model'] == 'llama-3.3-70b-versatile' ? 'selected' : '' ?>>Meta Llama 3.3 70B (Open-Source Flagship)</option>
-                            <option value="llama-3.1-8b-instant" <?= $settings['active_model'] == 'llama-3.1-8b-instant' ? 'selected' : '' ?>>Meta Llama 3.1 8B Instant (Respon Kilat)</option>
-                            <option value="mixtral-8x7b-32768" <?= $settings['active_model'] == 'mixtral-8x7b-32768' ? 'selected' : '' ?>>Mixtral 8x7B (Pakar Data & Logika)</option>
+                        <optgroup label="── Groq Cloud Meta Llama dan Mixtral ──">
+                            <option value="llama-3.3-70b-versatile" <?= $settings['active_model'] == 'llama-3.3-70b-versatile' ? 'selected' : '' ?>>Meta Llama 3.3 70B - Open Source Flagship</option>
+                            <option value="llama-3.1-8b-instant" <?= $settings['active_model'] == 'llama-3.1-8b-instant' ? 'selected' : '' ?>>Meta Llama 3.1 8B Instant - Respon Kilat</option>
+                            <option value="mixtral-8x7b-32768" <?= $settings['active_model'] == 'mixtral-8x7b-32768' ? 'selected' : '' ?>>Mixtral 8x7B - Pakar Data dan Logika</option>
                         </optgroup>
                         <optgroup label="── DeepSeek ──">
-                            <option value="deepseek-chat" <?= $settings['active_model'] == 'deepseek-chat' ? 'selected' : '' ?>>DeepSeek-V3 (Setara GPT-4o)</option>
-                            <option value="deepseek-reasoner" <?= $settings['active_model'] == 'deepseek-reasoner' ? 'selected' : '' ?>>DeepSeek-R1 (Penalaran Mendalam)</option>
+                            <option value="deepseek-chat" <?= $settings['active_model'] == 'deepseek-chat' ? 'selected' : '' ?>>DeepSeek V3 - Setara GPT 4o</option>
+                            <option value="deepseek-reasoner" <?= $settings['active_model'] == 'deepseek-reasoner' ? 'selected' : '' ?>>DeepSeek R1 - Penalaran Mendalam</option>
                         </optgroup>
                         <optgroup label="── OpenAI ──">
-                            <option value="gpt-4o-mini" <?= $settings['active_model'] == 'gpt-4o-mini' ? 'selected' : '' ?>>GPT-4o Mini (OpenAI)</option>
+                            <option value="gpt-4o-mini" <?= $settings['active_model'] == 'gpt-4o-mini' ? 'selected' : '' ?>>GPT 4o Mini - OpenAI</option>
                         </optgroup>
                     </select>
                 </div>
@@ -189,7 +196,7 @@ include '../includes/navbar.php';
             </div>
         </div>
 
-        <!-- BAGIAN 2: API KEY GOOGLE GEMINI (UTAMA & CADANGAN) -->
+        <!-- BAGIAN 2: API KEY GOOGLE GEMINI -->
         <div class="card-modern mb-4">
             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                 <h5 class="fw-bold text-dark mb-0">
@@ -200,10 +207,10 @@ include '../includes/navbar.php';
                 </a>
             </div>
 
-            <!-- SLOT 1: UTAMA -->
-            <div class="mb-3">
+            <!-- API KEY UTAMA -->
+            <div class="mb-2">
                 <div class="d-flex align-items-center justify-content-between mb-1">
-                    <label class="form-label-modern mb-0 fw-bold">API Key Utama (Wajib)</label>
+                    <label class="form-label-modern mb-0 fw-bold">API Key Utama</label>
                     <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" onclick="testSingleKey('gemini', 'gemini_key_primary', 'res_gemini_1')">
                         <i class="fas fa-bolt text-warning me-1"></i> Tes Koneksi
                     </button>
@@ -219,66 +226,18 @@ include '../includes/navbar.php';
                 </div>
                 <div id="res_gemini_1" class="test-result-box"></div>
             </div>
-
-            <!-- SLOT 2: CADANGAN 1 -->
-            <div class="mb-3">
-                <div class="d-flex align-items-center justify-content-between mb-1">
-                    <label class="form-label-modern mb-0">API Key Cadangan #1</label>
-                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" onclick="testSingleKey('gemini', 'gemini_key_backup_1', 'res_gemini_2')">
-                        <i class="fas fa-bolt text-warning me-1"></i> Tes Koneksi
-                    </button>
-                </div>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-shield-alt text-muted"></i></span>
-                    <input type="password" name="gemini_key_backup_1" id="gemini_key_backup_1" class="form-control form-control-modern border-start-0" 
-                           placeholder="Kunci cadangan otomatis jika kuota utama habis (opsional)" 
-                           value="<?= htmlspecialchars($settings['gemini_key_backup_1']) ?>">
-                    <button class="btn btn-outline-secondary border" type="button" onclick="toggleVisibility('gemini_key_backup_1', this)">
-                        <i class="far fa-eye"></i>
-                    </button>
-                </div>
-                <div id="res_gemini_2" class="test-result-box"></div>
-            </div>
-
-            <!-- SLOT 3: CADANGAN 2 -->
-            <div class="mb-3">
-                <div class="d-flex align-items-center justify-content-between mb-1">
-                    <label class="form-label-modern mb-0">API Key Cadangan #2</label>
-                    <button type="button" class="btn btn-sm btn-light border rounded-pill px-3" onclick="testSingleKey('gemini', 'gemini_key_backup_2', 'res_gemini_3')">
-                        <i class="fas fa-bolt text-warning me-1"></i> Tes Koneksi
-                    </button>
-                </div>
-                <div class="input-group">
-                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-life-ring text-muted"></i></span>
-                    <input type="password" name="gemini_key_backup_2" id="gemini_key_backup_2" class="form-control form-control-modern border-start-0" 
-                           placeholder="Kunci cadangan lapis ketiga (opsional)" 
-                           value="<?= htmlspecialchars($settings['gemini_key_backup_2']) ?>">
-                    <button class="btn btn-outline-secondary border" type="button" onclick="toggleVisibility('gemini_key_backup_2', this)">
-                        <i class="far fa-eye"></i>
-                    </button>
-                </div>
-                <div id="res_gemini_3" class="test-result-box"></div>
-            </div>
-
-            <!-- AUTO FAILOVER TOGGLE -->
-            <div class="form-check form-switch pt-2 mt-2 border-top">
-                <input class="form-check-input" type="checkbox" name="auto_failover" id="auto_failover" <?= !empty($settings['auto_failover']) ? 'checked' : '' ?>>
-                <label class="form-check-label fw-semibold text-dark" for="auto_failover">
-                    Otomatis beralih ke kunci cadangan jika kunci utama mencapai batas kuota (Error 429)
-                </label>
-            </div>
         </div>
 
         <!-- BAGIAN 3: PROVIDER LAIN (GROQ / DEEPSEEK / OPENAI) -->
         <div class="card-modern mb-4">
             <h5 class="fw-bold text-dark mb-3">
-                <i class="fas fa-network-wired text-primary me-2"></i> API Key Provider Lain (Opsional)
+                <i class="fas fa-network-wired text-primary me-2"></i> API Key Provider Lain
             </h5>
 
             <!-- GROQ -->
             <div class="mb-3">
                 <div class="d-flex align-items-center justify-content-between mb-1">
-                    <label class="form-label-modern mb-0">Groq API Key (Meta Llama & Mixtral)</label>
+                    <label class="form-label-modern mb-0">Groq API Key</label>
                     <div class="d-flex gap-2 align-items-center">
                         <a href="https://console.groq.com/keys" target="_blank" class="small text-decoration-none text-muted">
                             <i class="fas fa-external-link-alt"></i> Buat Key
@@ -299,7 +258,7 @@ include '../includes/navbar.php';
             <!-- DEEPSEEK -->
             <div class="mb-3">
                 <div class="d-flex align-items-center justify-content-between mb-1">
-                    <label class="form-label-modern mb-0">DeepSeek API Key (V3 & R1)</label>
+                    <label class="form-label-modern mb-0">DeepSeek API Key</label>
                     <div class="d-flex gap-2 align-items-center">
                         <a href="https://platform.deepseek.com/api_keys" target="_blank" class="small text-decoration-none text-muted">
                             <i class="fas fa-external-link-alt"></i> Buat Key
@@ -320,7 +279,7 @@ include '../includes/navbar.php';
             <!-- OPENAI -->
             <div class="mb-0">
                 <div class="d-flex align-items-center justify-content-between mb-1">
-                    <label class="form-label-modern mb-0">OpenAI API Key (GPT-4o Mini)</label>
+                    <label class="form-label-modern mb-0">OpenAI API Key</label>
                     <div class="d-flex gap-2 align-items-center">
                         <a href="https://platform.openai.com/api-keys" target="_blank" class="small text-decoration-none text-muted">
                             <i class="fas fa-external-link-alt"></i> Buat Key
@@ -347,22 +306,22 @@ include '../includes/navbar.php';
 
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label-modern fw-bold">Gaya Bahasa (Tone):</label>
+                    <label class="form-label-modern fw-bold">Gaya Bahasa:</label>
                     <select name="ai_tone" class="form-select form-control-modern">
                         <option value="seimbang" <?= ($settings['ai_tone'] === 'seimbang') ? 'selected' : '' ?>>
-                            🟢 Ramah & Informatif (Standar)
+                            🟢 Ramah dan Informatif
                         </option>
                         <option value="ringkas" <?= ($settings['ai_tone'] === 'ringkas') ? 'selected' : '' ?>>
-                            ⚡ Praktis & Ringkas (To-the-point)
+                            ⚡ Praktis dan Ringkas
                         </option>
                         <option value="mendalam" <?= ($settings['ai_tone'] === 'mendalam') ? 'selected' : '' ?>>
-                            📚 Edukatif & Mendalam (Pakar Pertanian)
+                            📚 Edukatif dan Mendalam
                         </option>
                     </select>
                 </div>
 
                 <div class="col-md-3">
-                    <label class="form-label-modern fw-bold">Kreativitas (Temperature):</label>
+                    <label class="form-label-modern fw-bold">Kreativitas:</label>
                     <input type="number" step="0.1" min="0.0" max="1.0" name="temperature" class="form-control form-control-modern" 
                            value="<?= htmlspecialchars($settings['temperature']) ?>">
                 </div>

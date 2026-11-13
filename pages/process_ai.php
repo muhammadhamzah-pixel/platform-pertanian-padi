@@ -67,11 +67,12 @@ $pertanyaan_lower = strtolower($pertanyaan);
 $kata_terlarang = ['password', 'api key', 'secret key', 'token otp'];
 foreach ($kata_terlarang as $kata) {
     if (strpos($pertanyaan_lower, $kata) !== false && strpos($pertanyaan_lower, 'cara ganti') === false) {
+        $current_csrf = $_SESSION['csrf_token'] ?? generate_csrf_token();
         echo json_encode([
             'success' => true,
             'jawaban' => "Mohon maaf, demi keamanan sistem, saya dilarang memberikan informasi mengenai kata sandi atau kredensial.",
             'sisa_limit' => max(0, $limit_harian - $chat_hari_ini),
-            'new_csrf_token' => regenerate_csrf_token()
+            'new_csrf_token' => $current_csrf
         ]);
         exit();
     }
@@ -165,10 +166,10 @@ if (!mysqli_query($conn, $query)) {
     exit();
 }
 
-// ===== 11. HITUNG SISA LIMIT & CSRF BARU =====
+// ===== 11. HITUNG SISA LIMIT & CSRF =====
 $chat_hari_ini++;
 $sisa_limit = max(0, $limit_harian - $chat_hari_ini);
-$new_csrf = regenerate_csrf_token();
+$current_csrf = $_SESSION['csrf_token'] ?? generate_csrf_token();
 
 // ===== 12. KEMBALIKAN RESPON =====
 echo json_encode([
@@ -176,6 +177,6 @@ echo json_encode([
     'jawaban' => $response,
     'sisa_limit' => $sisa_limit,
     'limit_harian' => $limit_harian,
-    'new_csrf_token' => $new_csrf
+    'new_csrf_token' => $current_csrf
 ]);
 ?>
