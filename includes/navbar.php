@@ -67,17 +67,20 @@ require_once __DIR__ . '/header.php';
         </div>
     </a>
 
-    <!-- User Profile Widget -->
-    <div class="user-info">
+    <!-- User Profile Widget (Klik untuk Edit Profil) -->
+    <a href="<?= $base_url ?>edit_profil" class="user-info user-info-clickable <?= ($current_clean ?? '') === 'edit_profil' ? 'active-profile' : '' ?>" title="Klik untuk edit data profil Anda">
         <div class="user-avatar-wrap">
             <img src="<?= $base_url ?>uploads/foto/<?= htmlspecialchars($foto) ?>" alt="Foto Profil" onerror="this.src='https://ui-avatars.com/api/?name=<?= urlencode($nama) ?>&background=059669&color=fff'">
             <div class="online-dot" title="Online"></div>
         </div>
-        <div class="user-details">
-            <strong><?= htmlspecialchars($nama) ?></strong>
+        <div class="user-details flex-grow-1">
+            <div class="d-flex align-items-center justify-content-between">
+                <strong><?= htmlspecialchars($nama) ?></strong>
+                <i class="fas fa-pen edit-badge-mini ms-1" title="Edit Profil"></i>
+            </div>
             <small><i class="fas fa-shield-alt"></i> <?= t('role_' . $role) ?></small>
         </div>
-    </div>
+    </a>
 
     <!-- Navigation Menu Items -->
     <nav class="sidebar-nav">
@@ -198,6 +201,12 @@ require_once __DIR__ . '/header.php';
         <div class="menu-section-title">Akun & Sistem</div>
         <ul>
             <?php if ($role == 'petani'): ?>
+                <li>
+                    <a href="<?= $base_url ?>edit_profil" class="<?= $current_clean == 'edit_profil' ? 'active' : '' ?>">
+                        <i class="fas fa-user-edit nav-icon"></i>
+                        <span>Edit Profil</span>
+                    </a>
+                </li>
                 <li>
                     <a href="<?= $base_url ?>setting_notifikasi" class="<?= $current_clean == 'setting_notifikasi' ? 'active' : '' ?>">
                         <i class="fas fa-sliders-h nav-icon"></i>

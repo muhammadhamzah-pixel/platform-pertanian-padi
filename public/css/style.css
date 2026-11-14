@@ -156,6 +156,31 @@ a:hover {
     align-items: center;
     gap: 12px;
 }
+.sidebar .user-info.user-info-clickable {
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.sidebar .user-info.user-info-clickable:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary-light, #10b981);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.sidebar .user-info.user-info-clickable.active-profile {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+}
+.sidebar .user-info.user-info-clickable:hover .edit-badge-mini {
+    opacity: 1 !important;
+    transform: scale(1.15);
+}
+.sidebar .user-info .edit-badge-mini {
+    font-size: 11px;
+    color: var(--accent-gold, #f59e0b);
+    opacity: 0.65;
+    transition: all 0.2s ease;
+}
 .sidebar .user-info .user-avatar-wrap {
     position: relative;
     flex-shrink: 0;
